@@ -153,6 +153,11 @@ export default function PaginaPublica() {
                         )}
                       </div>
                     </div>
+                    <button
+                      onClick={() => window.open(`https://wa.me/551934266185?text=Olá! Vi a promoção "${p.titulo}" no site e gostaria de agendar.`, '_blank')}
+                      style={{ marginTop: 14, marginLeft: 12, width: 'calc(100% - 12px)', background: '#25D366', color: 'white', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 12, letterSpacing: 2, cursor: 'pointer', fontWeight: 500 }}>
+                      AGENDAR VIA WHATSAPP
+                    </button>
                   </div>
                 </div>
               ))}
@@ -161,6 +166,7 @@ export default function PaginaPublica() {
         )}
 
         {!pacoteSelecionado ? (
+        
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {pacotes.map((p, idx) => (
               <div key={p.id}
