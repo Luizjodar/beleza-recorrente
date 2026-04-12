@@ -9,6 +9,7 @@ export default function PaginaPublica() {
   const [salao, setSalao] = useState<any>(null)
   const [pacotes, setPacotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [promocoes, setPromocoes] = useState<any[]>([])
   const [pacoteSelecionado, setPacoteSelecionado] = useState<any>(null)
   const [sucesso, setSucesso] = useState(false)
   const [enviando, setEnviando] = useState(false)
@@ -29,6 +30,17 @@ export default function PaginaPublica() {
         .eq('ativo', true)
         .order('preco_mensal', { ascending: true })
       setPacotes(pacotesData || [])
+
+      const hoje = new Date().toISOString().split('T')[0]
+      const { data: promoData } = await supabase
+        .from('promocoes')
+        .select('*')
+        .eq('salao_id', salaoData.id)
+        .eq('ativo', true)
+        .gte('data_fim', hoje)
+        .order('criado_em', { ascending: false })
+      setPromocoes(promoData || [])
+
       setLoading(false)
     }
     init()
@@ -110,6 +122,44 @@ export default function PaginaPublica() {
       </div>
 
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '40px 20px' }}>
+
+        {promocoes.length > 0 && !pacoteSelecionado && (
+          <div style={{ marginBottom: 32 }}>
+            <p style={{ color: '#aaa', fontSize: 10, letterSpacing: 4, textTransform: 'uppercase', marginBottom: 12 }}>Promoções especiais</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {promocoes.map(p => (
+                <div key={p.id} style={{ background: 'white', border: '1px solid #e8e8e8', borderRadius: 12, padding: 20, position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', background: '#111' }} />
+                  <div style={{ paddingLeft: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <p style={{ color: '#aaa', fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 4 }}>
+                          até {new Date(p.data_fim + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                        </p>
+                        <h3 style={{ color: '#111', fontSize: 16, fontWeight: 400, margin: '0 0 4px', fontFamily: 'Georgia, serif' }}>{p.titulo}</h3>
+                        {p.descricao && <p style={{ color: '#999', fontSize: 12, margin: 0 }}>{p.descricao}</p>}
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 16 }}>
+                        {p.preco_original && (
+                          <p style={{ color: '#ccc', fontSize: 12, textDecoration: 'line-through', margin: '0 0 2px' }}>
+                            R$ {parseFloat(p.preco_original).toFixed(0)}
+                          </p>
+                        )}
+                        <p style={{ color: '#111', fontSize: 20, fontWeight: 300, margin: 0 }}>R$ {parseFloat(p.preco_promo).toFixed(0)}</p>
+                        {p.preco_original && (
+                          <span style={{ background: '#111', color: 'white', fontSize: 10, padding: '2px 8px', borderRadius: 20, letterSpacing: 1 }}>
+                            -{Math.round((1 - p.preco_promo / p.preco_original) * 100)}% OFF
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {!pacoteSelecionado ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {pacotes.map((p, idx) => (
