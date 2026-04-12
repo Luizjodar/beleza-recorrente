@@ -29,8 +29,9 @@ export default function PacotesPage() {
         }).select().single()
         salao = novo
       }
-      setSalaoId(salao.id)
-      await carregarPacotes(salao.id)
+      setSalaoId(salao!.id)
+await carregarPacotes(salao!.id)
+
       setLoading(false)
     }
     init()
