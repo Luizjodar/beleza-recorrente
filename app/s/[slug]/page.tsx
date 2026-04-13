@@ -67,7 +67,10 @@ function AgendamentoPromo({ promo }: { promo: any }) {
   )
 }
 export default function PaginaPublica() {
-  const { slug } = useParams()
+  const params = useParams()
+const slug = typeof window !== 'undefined'
+  ? window.location.pathname.split('/').pop()
+  : Array.isArray(params?.slug) ? params.slug[0] : params?.slug
   const [salao, setSalao] = useState<any>(null)
   const [pacotes, setPacotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
