@@ -88,7 +88,11 @@ const slug = typeof window !== 'undefined'
       const slugStr = Array.isArray(slug) ? slug[0] : slug
       const { data: salaoData } = await supabase
         .from('saloes').select('*').eq('slug', slugStr).single()
-      if (!salaoData) { setLoading(false); return }
+      if (!salaoData) {
+  console.log('SLUG RECEBIDO:', slug)
+  console.log('SLUG STR:', slugStr)
+  setLoading(false); return
+}
       setSalao(salaoData)
       const { data: pacotesData } = await supabase
         .from('pacotes')
