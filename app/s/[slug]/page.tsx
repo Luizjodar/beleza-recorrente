@@ -81,8 +81,10 @@ export default function PaginaPublica() {
 
   useEffect(() => {
     async function init() {
+      if (!slug) return
+      const slugStr = Array.isArray(slug) ? slug[0] : slug
       const { data: salaoData } = await supabase
-        .from('saloes').select('*').eq('slug', slug).single()
+        .from('saloes').select('*').eq('slug', slugStr).single()
       if (!salaoData) { setLoading(false); return }
       setSalao(salaoData)
       const { data: pacotesData } = await supabase
