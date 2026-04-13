@@ -87,8 +87,9 @@ export default function Dashboard() {
           <span className="font-medium text-gray-900">Beleza Recorrente</span>
         </div>
         <div className="flex items-center gap-4">
-          <button onClick={() => router.push('/pacotes')} className="text-sm text-gray-500 hover:text-gray-700">Pacotes</button>
+         <button onClick={() => router.push('/pacotes')} className="text-sm text-gray-500 hover:text-gray-700">Pacotes</button>
           <button onClick={() => router.push('/assinantes')} className="text-sm text-gray-500 hover:text-gray-700">Assinantes</button>
+          <button onClick={() => router.push('/promocoes')} className="text-sm text-gray-500 hover:text-gray-700">Promoções</button>
           <button onClick={handleSair} className="text-sm text-gray-500 hover:text-gray-700">Sair</button>
         </div>
       </div>
