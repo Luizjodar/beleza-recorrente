@@ -3,7 +3,69 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useParams } from 'next/navigation'
+function AgendamentoPromo({ promo }: { promo: any }) {
+  const [aberto, setAberto] = useState(false)
+  const [nomeAge, setNomeAge] = useState('')
+  const [whatsAge, setWhatsAge] = useState('')
+  const [horario, setHorario] = useState('')
 
+  function confirmar() {
+    if (!nomeAge || !whatsAge || !horario) return
+    const msg = encodeURIComponent(
+      `Olá, Marcelo! Gostaria de agendar a promoção:\n\n` +
+      `*${promo.titulo}* — R$ ${parseFloat(promo.preco_promo).toFixed(0)}\n\n` +
+      `*Nome:* ${nomeAge}\n` +
+      `*WhatsApp:* ${whatsAge}\n` +
+      `*Horário desejado:* ${horario}`
+    )
+    window.open(`https://wa.me/551934266185?text=${msg}`, '_blank')
+    setAberto(false)
+    setNomeAge(''); setWhatsAge(''); setHorario('')
+  }
+
+  if (!aberto) return (
+    <button
+      onClick={() => setAberto(true)}
+      style={{ marginTop: 14, marginLeft: 12, width: 'calc(100% - 12px)', background: '#25D366', color: 'white', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 12, letterSpacing: 2, cursor: 'pointer', fontWeight: 500 }}>
+      AGENDAR VIA WHATSAPP
+    </button>
+  )
+
+  return (
+    <div style={{ marginTop: 14, marginLeft: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div>
+          <label style={{ color: '#aaa', fontSize: 10, letterSpacing: 2, display: 'block', marginBottom: 6 }}>SEU NOME</label>
+          <input value={nomeAge} onChange={e => setNomeAge(e.target.value)}
+            placeholder="Ex: Ana Paula"
+            style={{ width: '100%', background: '#fafafa', border: '1px solid #e8e8e8', borderRadius: 8, padding: '10px 12px', color: '#111', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ color: '#aaa', fontSize: 10, letterSpacing: 2, display: 'block', marginBottom: 6 }}>SEU WHATSAPP</label>
+          <input value={whatsAge} onChange={e => setWhatsAge(e.target.value)}
+            placeholder="5519999999999"
+            style={{ width: '100%', background: '#fafafa', border: '1px solid #e8e8e8', borderRadius: 8, padding: '10px 12px', color: '#111', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ color: '#aaa', fontSize: 10, letterSpacing: 2, display: 'block', marginBottom: 6 }}>HORÁRIO DESEJADO</label>
+          <input value={horario} onChange={e => setHorario(e.target.value)}
+            placeholder="Ex: Segunda às 14h ou Terça manhã"
+            style={{ width: '100%', background: '#fafafa', border: '1px solid #e8e8e8', borderRadius: 8, padding: '10px 12px', color: '#111', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={confirmar} disabled={!nomeAge || !whatsAge || !horario}
+            style={{ flex: 1, background: !nomeAge || !whatsAge || !horario ? '#f0f0f0' : '#25D366', color: !nomeAge || !whatsAge || !horario ? '#bbb' : 'white', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 12, letterSpacing: 2, cursor: 'pointer', fontWeight: 500 }}>
+            ENVIAR
+          </button>
+          <button onClick={() => setAberto(false)}
+            style={{ background: 'none', border: '1px solid #e8e8e8', borderRadius: 8, padding: '11px 16px', fontSize: 12, color: '#aaa', cursor: 'pointer' }}>
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 export default function PaginaPublica() {
   const { slug } = useParams()
   const [salao, setSalao] = useState<any>(null)
@@ -153,11 +215,7 @@ export default function PaginaPublica() {
                         )}
                       </div>
                     </div>
-                    <button
-                      onClick={() => window.open(`https://wa.me/551934266185?text=Olá! Vi a promoção "${p.titulo}" no site e gostaria de agendar.`, '_blank')}
-                      style={{ marginTop: 14, marginLeft: 12, width: 'calc(100% - 12px)', background: '#25D366', color: 'white', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 12, letterSpacing: 2, cursor: 'pointer', fontWeight: 500 }}>
-                      AGENDAR VIA WHATSAPP
-                    </button>
+                    <AgendamentoPromo promo={p} />
                   </div>
                 </div>
               ))}
