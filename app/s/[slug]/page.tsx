@@ -156,8 +156,10 @@ const slug = typeof window !== 'undefined'
   )
 
   if (!salao) return (
-    <div style={{ minHeight: '100vh', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ minHeight: '100vh', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8 }}>
       <p style={{ color: '#999', fontSize: 14 }}>Salão não encontrado</p>
+      <p style={{ color: 'red', fontSize: 12 }}>slug: {String(slug)}</p>
+      <p style={{ color: 'red', fontSize: 12 }}>url: {typeof window !== 'undefined' ? window.location.pathname : 'ssr'}</p>
     </div>
   )
 
