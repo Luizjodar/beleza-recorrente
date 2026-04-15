@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useParams } from 'next/navigation'
-function AgendamentoPromo({ promo }: { promo: any }) {
+
+function AgendamentoPromo({ promo, whatsappSalao }: { promo: any; whatsappSalao: string }) {
   const [aberto, setAberto] = useState(false)
   const [nomeAge, setNomeAge] = useState('')
   const [whatsAge, setWhatsAge] = useState('')
@@ -12,13 +13,14 @@ function AgendamentoPromo({ promo }: { promo: any }) {
   function confirmar() {
     if (!nomeAge || !whatsAge || !horario) return
     const msg = encodeURIComponent(
-      `Olá, Marcelo! Gostaria de agendar a promoção:\n\n` +
+      `Olá! Gostaria de agendar a promoção:\n\n` +
       `*${promo.titulo}* — R$ ${parseFloat(promo.preco_promo).toFixed(0)}\n\n` +
       `*Nome:* ${nomeAge}\n` +
       `*WhatsApp:* ${whatsAge}\n` +
       `*Horário desejado:* ${horario}`
     )
-    window.open(`https://wa.me/551934266185?text=${msg}`, '_blank')
+    // ✅ Número do WhatsApp vem do banco — não mais hard-coded
+    window.open(`https://wa.me/${whatsappSalao}?text=${msg}`, '_blank')
     setAberto(false)
     setNomeAge(''); setWhatsAge(''); setHorario('')
   }
@@ -66,15 +68,15 @@ function AgendamentoPromo({ promo }: { promo: any }) {
     </div>
   )
 }
+
 export default function PaginaPublica() {
   const params = useParams()
-const slug = typeof window !== 'undefined'
-  ? window.location.pathname.split('/').pop()
-  : Array.isArray(params?.slug) ? params.slug[0] : params?.slug
+  const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug
+
   const [salao, setSalao] = useState<any>(null)
   const [pacotes, setPacotes] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
   const [promocoes, setPromocoes] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [pacoteSelecionado, setPacoteSelecionado] = useState<any>(null)
   const [sucesso, setSucesso] = useState(false)
   const [enviando, setEnviando] = useState(false)
@@ -86,14 +88,13 @@ const slug = typeof window !== 'undefined'
     async function init() {
       if (!slug) return
       const slugStr = Array.isArray(slug) ? slug[0] : slug
+
       const { data: salaoData } = await supabase
         .from('saloes').select('*').eq('slug', slugStr).single()
-      if (!salaoData) {
-  console.log('SLUG RECEBIDO:', slug)
-  console.log('SLUG STR:', slugStr)
-  setLoading(false); return
-}
+
+      if (!salaoData) { setLoading(false); return }
       setSalao(salaoData)
+
       const { data: pacotesData } = await supabase
         .from('pacotes')
         .select('*, pacote_itens(*)')
@@ -118,19 +119,22 @@ const slug = typeof window !== 'undefined'
   }, [slug])
 
   async function assinar() {
-    if (!nome || !whatsapp || !pacoteSelecionado) return
+    if (!nome || !whatsapp || !pacoteSelecionado || !salao) return
     setEnviando(true)
+
     const { data } = await supabase.from('assinantes').insert({
       salao_id: salao.id,
       pacote_id: pacoteSelecionado.id,
       nome, whatsapp, email,
       data_inicio: new Date().toISOString().split('T')[0],
     }).select().single()
+
     if (data) {
       await supabase.rpc('gerar_saldo_mensal', {
         p_assinante_id: data.id,
         p_mes: new Date().toISOString().split('T')[0],
       })
+
       await fetch('/api/notificar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -139,11 +143,13 @@ const slug = typeof window !== 'undefined'
           emailCliente: email,
           nomePlano: pacoteSelecionado.nome,
           preco: parseFloat(pacoteSelecionado.preco_mensal).toFixed(0),
-          emailSalao: 'luisjodar00@gmail.com',
+          // ✅ Email e nome do salão vêm do banco — não mais hard-coded
+          emailSalao: salao.email_contato,
           nomeSalao: salao.nome,
           whatsappCliente: whatsapp,
         }),
       })
+
       setSucesso(true)
     }
     setEnviando(false)
@@ -156,10 +162,8 @@ const slug = typeof window !== 'undefined'
   )
 
   if (!salao) return (
-    <div style={{ minHeight: '100vh', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8 }}>
+    <div style={{ minHeight: '100vh', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <p style={{ color: '#999', fontSize: 14 }}>Salão não encontrado</p>
-      <p style={{ color: 'red', fontSize: 12 }}>slug: {String(slug)}</p>
-      <p style={{ color: 'red', fontSize: 12 }}>url: {typeof window !== 'undefined' ? window.location.pathname : 'ssr'}</p>
     </div>
   )
 
@@ -184,18 +188,31 @@ const slug = typeof window !== 'undefined'
 
   return (
     <div style={{ minHeight: '100vh', background: '#fafafa', fontFamily: 'system-ui, sans-serif' }}>
+
+      {/* Header — dados dinâmicos do banco */}
       <div style={{ background: 'white', borderBottom: '1px solid #eee', padding: '40px 24px', textAlign: 'center' }}>
-        <p style={{ color: '#aaa', fontSize: 10, letterSpacing: 4, textTransform: 'uppercase', marginBottom: 16 }}>Hair Designer</p>
+        {salao.cargo && (
+          <p style={{ color: '#aaa', fontSize: 10, letterSpacing: 4, textTransform: 'uppercase', marginBottom: 16 }}>
+            {salao.cargo}
+          </p>
+        )}
+        {/* ✅ Nome do salão vem do banco */}
         <h1 style={{ color: '#111', fontSize: 34, fontWeight: 300, letterSpacing: 6, fontFamily: 'Georgia, serif', margin: '0 0 8px' }}>
-          Marcelo Rissato
+          {salao.nome}
         </h1>
         <div style={{ width: 60, height: 1, background: '#ddd', margin: '16px auto' }} />
-        {salao.cidade && <p style={{ color: '#bbb', fontSize: 11, letterSpacing: 2 }}>{salao.cidade}</p>}
-        <p style={{ color: '#999', fontSize: 13, marginTop: 12 }}>Planos de assinatura exclusivos</p>
+        {/* ✅ Cidade vem do banco */}
+        {salao.cidade && (
+          <p style={{ color: '#bbb', fontSize: 11, letterSpacing: 2 }}>{salao.cidade}</p>
+        )}
+        {salao.descricao && (
+          <p style={{ color: '#999', fontSize: 13, marginTop: 12 }}>{salao.descricao}</p>
+        )}
       </div>
 
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '40px 20px' }}>
 
+        {/* Promoções */}
         {promocoes.length > 0 && !pacoteSelecionado && (
           <div style={{ marginBottom: 32 }}>
             <p style={{ color: '#aaa', fontSize: 10, letterSpacing: 4, textTransform: 'uppercase', marginBottom: 12 }}>Promoções especiais</p>
@@ -226,7 +243,8 @@ const slug = typeof window !== 'undefined'
                         )}
                       </div>
                     </div>
-                    <AgendamentoPromo promo={p} />
+                    {/* ✅ Passa whatsapp do banco para o componente */}
+                    <AgendamentoPromo promo={p} whatsappSalao={salao.whatsapp || ''} />
                   </div>
                 </div>
               ))}
@@ -234,8 +252,8 @@ const slug = typeof window !== 'undefined'
           </div>
         )}
 
+        {/* Pacotes */}
         {!pacoteSelecionado ? (
-        
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {pacotes.map((p, idx) => (
               <div key={p.id}
@@ -309,8 +327,12 @@ const slug = typeof window !== 'undefined'
         )}
       </div>
 
+      {/* Footer dinâmico */}
       <div style={{ borderTop: '1px solid #eee', padding: '24px', textAlign: 'center', marginTop: 40, background: 'white' }}>
-        <p style={{ color: '#ccc', fontSize: 10, letterSpacing: 4 }}>MARCELO RISSATO — HAIR DESIGNER</p>
+        <p style={{ color: '#ccc', fontSize: 10, letterSpacing: 4 }}>
+          {salao.nome.toUpperCase()}
+          {salao.cargo ? ` — ${salao.cargo.toUpperCase()}` : ''}
+        </p>
       </div>
     </div>
   )
