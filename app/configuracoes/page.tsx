@@ -237,30 +237,28 @@ export default function ConfiguracoesPage() {
             </div>
 
             {slug && (
-              <div className="mt-3 flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                <span className="text-xs text-gray-400">Seu link:</span>
-                
-                  href={`/s/${slug}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-                >
-                  beleza-recorrente.vercel.app/s/{slug}
-                </a>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(`https://beleza-recorrente.vercel.app/s/${slug}`)
-                    setSucesso(true)
-                    setTimeout(() => setSucesso(false), 2000)
-                  }}
-                  className="ml-auto text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-2 py-0.5"
-                >
-                  Copiar
-                </button>
-              </div>
-            )}
-          </div>
-
+  <div className="mt-3 flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+    <span className="text-xs text-gray-400">Seu link:</span>
+    
+      href={`/s/${slug}`}
+      target="_blank"
+      rel="noreferrer"
+      className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+    >
+      beleza-recorrente.vercel.app/s/{slug}
+    </a>
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(`https://beleza-recorrente.vercel.app/s/${slug}`)
+        setSucesso(true)
+        setTimeout(() => setSucesso(false), 2000)
+      }}
+      className="ml-auto text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-2 py-0.5"
+    >
+      Copiar
+    </button>
+  </div>
+)}
           <div className="px-6 py-5 border-b border-gray-100">
             <p className="text-xs text-gray-400 uppercase tracking-widest mb-4">Contato</p>
             <div className="space-y-4">
