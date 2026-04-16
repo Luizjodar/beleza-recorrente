@@ -11,7 +11,6 @@ export default function ConfiguracoesPage() {
   const [salvando, setSalvando] = useState(false)
   const [sucesso, setSucesso] = useState(false)
   const [erro, setErro] = useState('')
-
   const [nome, setNome] = useState('')
   const [slug, setSlug] = useState('')
   const [slugOriginal, setSlugOriginal] = useState('')
@@ -25,15 +24,9 @@ export default function ConfiguracoesPage() {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-
       const { data: salao } = await supabase
-        .from('saloes')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
-
+        .from('saloes').select('*').eq('user_id', user.id).single()
       if (!salao) { router.push('/dashboard'); return }
-
       setSalaoId(salao.id)
       setNome(salao.nome || '')
       setSlug(salao.slug || '')
@@ -49,20 +42,14 @@ export default function ConfiguracoesPage() {
   }, [])
 
   function gerarSlug(valor: string) {
-    return valor
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9\s-]/g, '')
-      .trim()
-      .replace(/\s+/g, '-')
+    return valor.toLowerCase().normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s-]/g, '')
+      .trim().replace(/\s+/g, '-')
   }
 
   function handleNome(valor: string) {
     setNome(valor)
-    if (slug === slugOriginal) {
-      setSlug(gerarSlug(valor))
-    }
+    if (slug === slugOriginal) setSlug(gerarSlug(valor))
   }
 
   async function salvar() {
@@ -70,42 +57,20 @@ export default function ConfiguracoesPage() {
       setErro('Nome, link público e WhatsApp são obrigatórios.')
       return
     }
-
     if (!/^[a-z0-9-]+$/.test(slug)) {
       setErro('O link público só pode ter letras minúsculas, números e hífens.')
       return
     }
-
     if (slug !== slugOriginal) {
       const { data: existente } = await supabase
-        .from('saloes')
-        .select('id')
-        .eq('slug', slug)
-        .neq('id', salaoId)
-        .single()
-
-      if (existente) {
-        setErro('Este link público já está sendo usado. Escolha outro.')
-        return
-      }
+        .from('saloes').select('id').eq('slug', slug).neq('id', salaoId).single()
+      if (existente) { setErro('Este link já está em uso. Escolha outro.'); return }
     }
-
     setSalvando(true)
     setErro('')
-
-    const { error } = await supabase
-      .from('saloes')
-      .update({
-        nome,
-        slug,
-        cargo,
-        descricao,
-        cidade,
-        whatsapp,
-        email_contato: emailContato,
-      })
-      .eq('id', salaoId)
-
+    const { error } = await supabase.from('saloes').update({
+      nome, slug, cargo, descricao, cidade, whatsapp, email_contato: emailContato,
+    }).eq('id', salaoId)
     if (error) {
       setErro('Erro ao salvar. Tente novamente.')
     } else {
@@ -113,7 +78,6 @@ export default function ConfiguracoesPage() {
       setSucesso(true)
       setTimeout(() => setSucesso(false), 3000)
     }
-
     setSalvando(false)
   }
 
@@ -133,7 +97,6 @@ export default function ConfiguracoesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-
       <div className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-emerald-500" />
@@ -158,10 +121,9 @@ export default function ConfiguracoesPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-6 py-10">
-
         <div className="mb-8">
           <h1 className="text-2xl font-medium text-gray-900">Configurações do salão</h1>
-          <p className="text-sm text-gray-400 mt-1">Informações exibidas na sua página pública de assinatura</p>
+          <p className="text-sm text-gray-400 mt-1">Informações exibidas na sua página pública</p>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
@@ -169,134 +131,86 @@ export default function ConfiguracoesPage() {
           <div className="px-6 py-5 border-b border-gray-100">
             <p className="text-xs text-gray-400 uppercase tracking-widest mb-4">Identidade</p>
             <div className="space-y-4">
-
               <div>
                 <label className="text-sm text-gray-600 block mb-1.5">Nome do salão / profissional <span className="text-red-400">*</span></label>
-                <input
-                  value={nome}
-                  onChange={e => handleNome(e.target.value)}
+                <input value={nome} onChange={e => handleNome(e.target.value)}
                   placeholder="Ex: Marcelo Rissato"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 transition-colors"
-                />
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
               </div>
-
               <div>
                 <label className="text-sm text-gray-600 block mb-1.5">Cargo / especialidade</label>
-                <input
-                  value={cargo}
-                  onChange={e => setCargo(e.target.value)}
+                <input value={cargo} onChange={e => setCargo(e.target.value)}
                   placeholder="Ex: Hair Designer, Cabeleireira, Barbeiro"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 transition-colors"
-                />
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
               </div>
-
               <div>
                 <label className="text-sm text-gray-600 block mb-1.5">Descrição curta</label>
-                <input
-                  value={descricao}
-                  onChange={e => setDescricao(e.target.value)}
+                <input value={descricao} onChange={e => setDescricao(e.target.value)}
                   placeholder="Ex: Planos de assinatura exclusivos"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 transition-colors"
-                />
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
               </div>
-
               <div>
                 <label className="text-sm text-gray-600 block mb-1.5">Cidade</label>
-                <input
-                  value={cidade}
-                  onChange={e => setCidade(e.target.value)}
+                <input value={cidade} onChange={e => setCidade(e.target.value)}
                   placeholder="Ex: Piracicaba, SP"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 transition-colors"
-                />
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
               </div>
-
             </div>
           </div>
 
           <div className="px-6 py-5 border-b border-gray-100">
             <p className="text-xs text-gray-400 uppercase tracking-widest mb-4">Link público</p>
-
             <div>
-              <label className="text-sm text-gray-600 block mb-1.5">
-                Endereço da sua página <span className="text-red-400">*</span>
-              </label>
-              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-emerald-400 transition-colors">
+              <label className="text-sm text-gray-600 block mb-1.5">Endereço da sua página <span className="text-red-400">*</span></label>
+              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-emerald-400">
                 <span className="bg-gray-50 px-3 py-2 text-sm text-gray-400 border-r border-gray-200 whitespace-nowrap">
                   beleza-recorrente.vercel.app/s/
                 </span>
-                <input
-                  value={slug}
-                  onChange={e => setSlug(gerarSlug(e.target.value))}
+                <input value={slug} onChange={e => setSlug(gerarSlug(e.target.value))}
                   placeholder="meu-salao"
-                  className="flex-1 px-3 py-2 text-sm outline-none bg-white"
-                />
+                  className="flex-1 px-3 py-2 text-sm outline-none bg-white" />
               </div>
-              <p className="text-xs text-gray-400 mt-1.5">
-                Só letras minúsculas, números e hífens. Este é o link que você compartilha com seus clientes.
-              </p>
+              <p className="text-xs text-gray-400 mt-1.5">Só letras minúsculas, números e hífens.</p>
             </div>
-
             {slug && (
-  <div className="mt-3 flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-    <span className="text-xs text-gray-400">Seu link:</span>
-    
-      href={`/s/${slug}`}
-      target="_blank"
-      rel="noreferrer"
-      className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-    >
-      beleza-recorrente.vercel.app/s/{slug}
-    </a>
-    <button
-      onClick={() => {
-        navigator.clipboard.writeText(`https://beleza-recorrente.vercel.app/s/${slug}`)
-        setSucesso(true)
-        setTimeout(() => setSucesso(false), 2000)
-      }}
-      className="ml-auto text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-2 py-0.5"
-    >
-      Copiar
-    </button>
-  </div>
-)}
+              <div className="mt-3 flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                <span className="text-xs text-gray-400">Seu link:</span>
+                <span className="text-xs text-emerald-600 font-medium">
+                  beleza-recorrente.vercel.app/s/{slug}
+                </span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText('https://beleza-recorrente.vercel.app/s/' + slug)
+                    setSucesso(true)
+                    setTimeout(() => setSucesso(false), 2000)
+                  }}
+                  className="ml-auto text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-2 py-0.5">
+                  Copiar
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="px-6 py-5 border-b border-gray-100">
             <p className="text-xs text-gray-400 uppercase tracking-widest mb-4">Contato</p>
             <div className="space-y-4">
-
               <div>
-                <label className="text-sm text-gray-600 block mb-1.5">
-                  WhatsApp <span className="text-red-400">*</span>
-                </label>
-                <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-emerald-400 transition-colors">
-                  <span className="bg-gray-50 px-3 py-2 text-sm text-gray-400 border-r border-gray-200">
-                    +
-                  </span>
-                  <input
-                    value={whatsapp}
-                    onChange={e => setWhatsapp(e.target.value.replace(/\D/g, ''))}
+                <label className="text-sm text-gray-600 block mb-1.5">WhatsApp <span className="text-red-400">*</span></label>
+                <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-emerald-400">
+                  <span className="bg-gray-50 px-3 py-2 text-sm text-gray-400 border-r border-gray-200">+</span>
+                  <input value={whatsapp} onChange={e => setWhatsapp(e.target.value.replace(/\D/g, ''))}
                     placeholder="5519999999999"
-                    className="flex-1 px-3 py-2 text-sm outline-none bg-white"
-                  />
+                    className="flex-1 px-3 py-2 text-sm outline-none bg-white" />
                 </div>
-                <p className="text-xs text-gray-400 mt-1.5">
-                  Código do país + DDD + número, sem espaços. Ex: 5519999999999
-                </p>
+                <p className="text-xs text-gray-400 mt-1.5">Código do país + DDD + número. Ex: 5519999999999</p>
               </div>
-
               <div>
                 <label className="text-sm text-gray-600 block mb-1.5">Email para notificações</label>
-                <input
-                  value={emailContato}
-                  onChange={e => setEmailContato(e.target.value)}
-                  placeholder="seu@email.com"
-                  type="email"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 transition-colors"
-                />
-                <p className="text-xs text-gray-400 mt-1.5">
-                  Você receberá um email aqui sempre que alguém assinar um plano.
-                </p>
+                <input value={emailContato} onChange={e => setEmailContato(e.target.value)}
+                  placeholder="seu@email.com" type="email"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                <p className="text-xs text-gray-400 mt-1.5">Você receberá um email quando alguém assinar um plano.</p>
               </div>
-
             </div>
           </div>
 
@@ -305,15 +219,11 @@ export default function ConfiguracoesPage() {
               {erro && <p className="text-sm text-red-500">{erro}</p>}
               {sucesso && <p className="text-sm text-emerald-600">Salvo com sucesso!</p>}
             </div>
-            <button
-              onClick={salvar}
-              disabled={salvando}
-              className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg px-6 py-2 text-sm font-medium transition-colors"
-            >
+            <button onClick={salvar} disabled={salvando}
+              className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg px-6 py-2 text-sm font-medium transition-colors">
               {salvando ? 'Salvando...' : 'Salvar alterações'}
             </button>
           </div>
-
         </div>
 
         <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden mt-6">
@@ -324,16 +234,13 @@ export default function ConfiguracoesPage() {
                 <p className="text-sm text-gray-700">Sair da conta</p>
                 <p className="text-xs text-gray-400 mt-0.5">Você será redirecionado para o login</p>
               </div>
-              <button
-                onClick={() => supabase.auth.signOut().then(() => router.push('/login'))}
-                className="text-sm text-red-400 hover:text-red-600 border border-red-100 hover:border-red-200 rounded-lg px-4 py-2 transition-colors"
-              >
+              <button onClick={() => supabase.auth.signOut().then(() => router.push('/login'))}
+                className="text-sm text-red-400 hover:text-red-600 border border-red-100 hover:border-red-200 rounded-lg px-4 py-2 transition-colors">
                 Sair
               </button>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   )
