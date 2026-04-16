@@ -1,4 +1,4 @@
-mport { Resend } from 'resend'
+import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
