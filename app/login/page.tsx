@@ -15,7 +15,6 @@ export default function LoginPage() {
   async function handleSubmit() {
     setErro('')
     setLoading(true)
-
     if (modo === 'cadastro') {
       const { error } = await supabase.auth.signUp({ email, password: senha })
       if (error) { setErro(error.message); setLoading(false); return }
@@ -29,58 +28,96 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-gray-200 p-8 w-full max-w-md">
+    <div style={{ minHeight: '100vh', background: '#f7f6f3', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      <div style={{ display: 'flex', width: '100%', maxWidth: 820, borderRadius: 20, overflow: 'hidden', border: '0.5px solid #e8e6e0', boxShadow: '0 8px 40px rgba(0,0,0,0.06)' }}>
 
-        <div className="mb-8">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500 mb-4" />
-          <h1 className="text-2xl font-medium text-gray-900">Beleza Recorrente</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {modo === 'login' ? 'Entre na sua conta' : 'Crie sua conta grátis'}
-          </p>
+        {/* Painel esquerdo */}
+        <div style={{ flex: 1, background: '#111', padding: '48px 40px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ width: 32, height: 32, border: '1.5px solid #333', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 40 }}>
+              <div style={{ width: 12, height: 12, background: '#fff', borderRadius: 2 }} />
+            </div>
+            <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 300, letterSpacing: -0.5, margin: '0 0 12px', fontFamily: 'Georgia, serif', lineHeight: 1.4 }}>
+              Gerencie seu salao com inteligencia
+            </h2>
+            <p style={{ color: '#666', fontSize: 13, margin: 0, lineHeight: 1.7 }}>
+              Assinaturas, pagamentos e clientes — tudo em um so lugar.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {['Controle total de assinantes', 'Pagamentos automatizados', 'Retencao via WhatsApp'].map(item => (
+              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 6, height: 6, background: '#444', borderRadius: '50%', flexShrink: 0 }} />
+                <span style={{ color: '#555', fontSize: 12, letterSpacing: 0.3 }}>{item}</span>
+              </div>
+            ))}
+            <div style={{ marginTop: 8, paddingTop: 20, borderTop: '0.5px solid #222' }}>
+              <span style={{ fontSize: 10, color: '#333', letterSpacing: 3, textTransform: 'uppercase' }}>Beleza Recorrente</span>
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm text-gray-600 block mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="seu@email.com"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400"
-            />
+        {/* Painel direito */}
+        <div style={{ flex: 1, background: '#fff', padding: '48px 40px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ marginBottom: 32 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 400, color: '#111', margin: '0 0 6px', letterSpacing: -0.3 }}>
+              {modo === 'login' ? 'Entrar na conta' : 'Criar conta'}
+            </h1>
+            <p style={{ fontSize: 13, color: '#aaa', margin: 0 }}>
+              {modo === 'login' ? 'Bem-vindo de volta' : 'Comece gratuitamente'}
+            </p>
           </div>
-          <div>
-            <label className="text-sm text-gray-600 block mb-1">Senha</label>
-            <input
-              type="password"
-              value={senha}
-              onChange={e => setSenha(e.target.value)}
-              placeholder="••••••••"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400"
-            />
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
+            <div>
+              <label style={{ fontSize: 10, letterSpacing: 2, color: '#bbb', textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                style={{ width: '100%', border: '0.5px solid #e5e3de', borderRadius: 10, padding: '11px 14px', background: '#fafaf9', fontSize: 13, color: '#111', outline: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 10, letterSpacing: 2, color: '#bbb', textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Senha</label>
+              <input
+                type="password"
+                value={senha}
+                onChange={e => setSenha(e.target.value)}
+                placeholder="••••••••"
+                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                style={{ width: '100%', border: '0.5px solid #e5e3de', borderRadius: 10, padding: '11px 14px', background: '#fafaf9', fontSize: 13, color: '#111', outline: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
           </div>
 
           {erro && (
-            <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2">{erro}</p>
+            <p style={{ fontSize: 12, color: erro.includes('Verifique') ? '#059669' : '#dc2626', background: erro.includes('Verifique') ? '#f0fdf4' : '#fef2f2', padding: '10px 14px', borderRadius: 8, marginBottom: 16 }}>
+              {erro}
+            </p>
           )}
 
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50"
+            style={{ width: '100%', background: loading ? '#999' : '#111', color: '#fff', border: 'none', borderRadius: 10, padding: 13, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', cursor: 'pointer', transition: 'background 0.2s' }}
           >
             {loading ? 'Aguarde...' : modo === 'login' ? 'Entrar' : 'Criar conta'}
           </button>
 
-          <button
-            onClick={() => setModo(modo === 'login' ? 'cadastro' : 'login')}
-            className="w-full text-sm text-gray-500 hover:text-gray-700"
-          >
-            {modo === 'login' ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Entre'}
-          </button>
+          <p style={{ textAlign: 'center', fontSize: 12, color: '#ccc', marginTop: 20 }}>
+            {modo === 'login' ? 'Nao tem conta? ' : 'Ja tem conta? '}
+            <span
+              onClick={() => { setModo(modo === 'login' ? 'cadastro' : 'login'); setErro('') }}
+              style={{ color: '#111', textDecoration: 'underline', cursor: 'pointer' }}
+            >
+              {modo === 'login' ? 'Cadastre-se' : 'Entre'}
+            </span>
+          </p>
         </div>
+
       </div>
     </div>
   )
