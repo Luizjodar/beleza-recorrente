@@ -45,11 +45,13 @@ export default function Dashboard() {
   }, [])
 
   const nav = [
-    { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Pacotes', path: '/pacotes' },
-    { label: 'Assinantes', path: '/assinantes' },
-    { label: 'Promoções', path: '/promocoes' },
-  ]
+  { label: 'Dashboard', path: '/dashboard' },
+  { label: 'Pacotes', path: '/pacotes' },
+  { label: 'Assinantes', path: '/assinantes' },
+  { label: 'Pagamentos', path: '/pagamentos' },
+  { label: 'Promocoes', path: '/promocoes' },
+  { label: 'Configuracoes', path: '/configuracoes' },
+]
 
   const statusStyle: any = {
     ativo: { background: '#f0fdf4', color: '#15803d' },
