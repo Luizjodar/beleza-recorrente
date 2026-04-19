@@ -3,9 +3,12 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
+import { useTema } from '../lib/tema'
+import Navbar from '../components/Navbar'
 
 export default function AssinantesPage() {
   const router = useRouter()
+  const { t } = useTema()
   const [salaoId, setSalaoId] = useState<string | null>(null)
   const [assinantes, setAssinantes] = useState<any[]>([])
   const [pacotes, setPacotes] = useState<any[]>([])
@@ -13,7 +16,6 @@ export default function AssinantesPage() {
   const [criando, setCriando] = useState(false)
   const [saldoAberto, setSaldoAberto] = useState<string | null>(null)
   const [saldos, setSaldos] = useState<any[]>([])
-
   const [nome, setNome] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [email, setEmail] = useState('')
@@ -23,24 +25,13 @@ export default function AssinantesPage() {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-
-      const { data: salao } = await supabase
-        .from('saloes').select('id').eq('user_id', user.id).single()
+      const { data: salao } = await supabase.from('saloes').select('id').eq('user_id', user.id).single()
       if (!salao) { router.push('/dashboard'); return }
-
       setSalaoId(salao.id)
-
       const [{ data: ass }, { data: pacs }] = await Promise.all([
-        supabase.from('assinantes')
-          .select('*, pacotes(nome, preco_mensal)')
-          .eq('salao_id', salao.id)
-          .order('criado_em', { ascending: false }),
-        supabase.from('pacotes')
-          .select('id, nome, preco_mensal')
-          .eq('salao_id', salao.id)
-          .eq('ativo', true)
+        supabase.from('assinantes').select('*, pacotes(nome, preco_mensal)').eq('salao_id', salao.id).order('criado_em', { ascending: false }),
+        supabase.from('pacotes').select('id, nome, preco_mensal').eq('salao_id', salao.id).eq('ativo', true),
       ])
-
       setAssinantes(ass || [])
       setPacotes(pacs || [])
       setLoading(false)
@@ -50,24 +41,14 @@ export default function AssinantesPage() {
 
   async function salvarAssinante() {
     if (!nome || !whatsapp || !pacoteId || !salaoId) return
-
     const { data } = await supabase.from('assinantes').insert({
-      salao_id: salaoId,
-      pacote_id: pacoteId,
-      nome,
-      whatsapp,
-      email,
+      salao_id: salaoId, pacote_id: pacoteId, nome, whatsapp, email,
       data_inicio: new Date().toISOString().split('T')[0],
     }).select('*, pacotes(nome, preco_mensal)').single()
-
     if (data) {
-      await supabase.rpc('gerar_saldo_mensal', {
-        p_assinante_id: data.id,
-        p_mes: new Date().toISOString().split('T')[0],
-      })
+      await supabase.rpc('gerar_saldo_mensal', { p_assinante_id: data.id, p_mes: new Date().toISOString().split('T')[0] })
       setAssinantes([data, ...assinantes])
     }
-
     setNome(''); setWhatsapp(''); setEmail(''); setPacoteId('')
     setCriando(false)
   }
@@ -75,107 +56,81 @@ export default function AssinantesPage() {
   async function abrirSaldo(assinanteId: string) {
     if (saldoAberto === assinanteId) { setSaldoAberto(null); return }
     const mes = new Date().toISOString().slice(0, 7) + '-01'
-    const { data } = await supabase.from('saldo_mensal')
-      .select('*')
-      .eq('assinante_id', assinanteId)
-      .eq('mes_referencia', mes)
+    const { data } = await supabase.from('saldo_mensal').select('*').eq('assinante_id', assinanteId).eq('mes_referencia', mes)
     setSaldos(data || [])
     setSaldoAberto(assinanteId)
   }
 
   async function marcarUso(saldo: any) {
     if (saldo.quantidade_usada >= saldo.quantidade_total) return
-    await supabase.from('usos').insert({
-      saldo_id: saldo.id,
-      assinante_id: saldo.assinante_id,
-      servico_nome: saldo.servico_nome,
-    })
-    setSaldos(saldos.map(s =>
-      s.id === saldo.id ? { ...s, quantidade_usada: s.quantidade_usada + 1 } : s
-    ))
+    await supabase.from('usos').insert({ saldo_id: saldo.id, assinante_id: saldo.assinante_id, servico_nome: saldo.servico_nome })
+    setSaldos(saldos.map(s => s.id === saldo.id ? { ...s, quantidade_usada: s.quantidade_usada + 1 } : s))
   }
 
-  const statusColor: any = {
-    ativo: 'bg-emerald-50 text-emerald-700',
-    cancelado: 'bg-red-50 text-red-600',
-    inadimplente: 'bg-amber-50 text-amber-700',
-    pausado: 'bg-gray-100 text-gray-500',
-  }
+  const statusBg: any = { ativo: t.badgeAtivo, cancelado: t.badgeCancelado, inadimplente: t.badgeInadimplente, pausado: t.badgePausado }
+  const statusText: any = { ativo: t.badgeAtivoText, cancelado: t.badgeCanceladoText, inadimplente: t.badgeInadimplenteText, pausado: t.badgePausadoText }
+
+  const inputStyle = { width: '100%', border: `0.5px solid ${t.border}`, borderRadius: 10, padding: '11px 14px', background: t.bgInput, fontSize: 13, color: t.text, outline: 'none', boxSizing: 'border-box' as const }
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <p className="text-gray-400 text-sm">Carregando...</p>
+    <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: t.textFaint, fontSize: 12, letterSpacing: 3 }}>CARREGANDO</p>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500" />
-          <span className="font-medium text-gray-900">Beleza Recorrente</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push('/dashboard')} className="text-sm text-gray-500 hover:text-gray-700">Dashboard</button>
-          <button onClick={() => router.push('/pacotes')} className="text-sm text-gray-500 hover:text-gray-700">Pacotes</button>
-          <button onClick={() => supabase.auth.signOut().then(() => router.push('/login'))} className="text-sm text-gray-500 hover:text-gray-700">Sair</button>
-        </div>
-      </div>
+    <div style={{ minHeight: '100vh', background: t.bg, fontFamily: 'system-ui, sans-serif' }}>
+      <Navbar />
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 24px' }}>
 
-      <div className="max-w-3xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-medium text-gray-900">Assinantes</h1>
+        <div style={{ marginBottom: 32, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ color: t.textMuted, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', margin: '0 0 6px' }}>Gestao</p>
+            <h1 style={{ color: t.text, fontSize: 30, fontWeight: 300, margin: 0, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>Assinantes</h1>
+          </div>
           <button onClick={() => setCriando(true)}
-            className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
+            style={{ background: t.text, color: t.navBg, border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 12, cursor: 'pointer' }}>
             + Novo assinante
           </button>
         </div>
 
         {criando && (
-          <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-            <h2 className="text-base font-medium text-gray-900 mb-4">Novo assinante</h2>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+          <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '28px 32px', marginBottom: 20 }}>
+            <h2 style={{ color: t.text, fontSize: 16, fontWeight: 400, margin: '0 0 20px' }}>Novo assinante</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Nome</label>
-                  <input value={nome} onChange={e => setNome(e.target.value)}
-                    placeholder="Ex: Ana Paula"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Nome</label>
+                  <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Ana Paula" style={inputStyle} />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">WhatsApp</label>
-                  <input value={whatsapp} onChange={e => setWhatsapp(e.target.value)}
-                    placeholder="5519999999999"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>WhatsApp</label>
+                  <input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="5519999999999" style={inputStyle} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Email (opcional)</label>
-                  <input value={email} onChange={e => setEmail(e.target.value)}
-                    placeholder="ana@email.com"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Email (opcional)</label>
+                  <input value={email} onChange={e => setEmail(e.target.value)} placeholder="ana@email.com" style={inputStyle} />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Pacote</label>
+                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Pacote</label>
                   <select value={pacoteId} onChange={e => setPacoteId(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 bg-white">
+                    style={{ ...inputStyle, appearance: 'none' as const }}>
                     <option value="">Selecione...</option>
                     {pacotes.map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.nome} — R$ {parseFloat(p.preco_mensal).toFixed(0)}/mês
-                      </option>
+                      <option key={p.id} value={p.id}>{p.nome} — R$ {parseFloat(p.preco_mensal).toFixed(0)}/mes</option>
                     ))}
                   </select>
                 </div>
               </div>
-              <div className="flex gap-3 pt-1">
+              <div style={{ display: 'flex', gap: 12 }}>
                 <button onClick={salvarAssinante}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg px-5 py-2 text-sm font-medium transition-colors">
+                  style={{ background: t.text, color: t.navBg, border: 'none', borderRadius: 10, padding: '11px 24px', fontSize: 12, cursor: 'pointer' }}>
                   Salvar
                 </button>
                 <button onClick={() => setCriando(false)}
-                  className="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
+                  style={{ background: 'none', border: 'none', color: t.textMuted, fontSize: 13, cursor: 'pointer' }}>
                   Cancelar
                 </button>
               </div>
@@ -184,51 +139,49 @@ export default function AssinantesPage() {
         )}
 
         {assinantes.length === 0 && !criando ? (
-          <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
-            <p className="text-gray-400 text-sm">Nenhum assinante ainda</p>
+          <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: 48, textAlign: 'center' }}>
+            <p style={{ color: t.textFaint, fontSize: 13 }}>Nenhum assinante ainda</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {assinantes.map(a => (
-              <div key={a.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div className="p-5 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-700 font-medium text-sm">
+              <div key={a.id} style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, overflow: 'hidden' }}>
+                <div style={{ padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.text, fontSize: 13, fontWeight: 500 }}>
                       {a.nome.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900 text-sm">{a.nome}</p>
-                      <p className="text-xs text-gray-400">{a.pacotes?.nome} · R$ {parseFloat(a.pacotes?.preco_mensal).toFixed(0)}/mês</p>
+                      <p style={{ color: t.text, fontSize: 14, margin: '0 0 2px', fontWeight: 400 }}>{a.nome}</p>
+                      <p style={{ color: t.textFaint, fontSize: 11, margin: 0 }}>{a.pacotes?.nome} · R$ {parseFloat(a.pacotes?.preco_mensal || 0).toFixed(0)}/mes</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColor[a.status]}`}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ background: statusBg[a.status], color: statusText[a.status], fontSize: 10, padding: '3px 10px', borderRadius: 20 }}>
                       {a.status}
                     </span>
                     <button onClick={() => abrirSaldo(a.id)}
-                      className="text-xs text-emerald-600 hover:text-emerald-700 border border-emerald-200 rounded-lg px-3 py-1">
+                      style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 8, padding: '5px 12px', fontSize: 11, cursor: 'pointer' }}>
                       {saldoAberto === a.id ? 'Fechar' : 'Ver saldo'}
                     </button>
                   </div>
                 </div>
 
                 {saldoAberto === a.id && (
-                  <div className="border-t border-gray-100 px-5 py-4 bg-gray-50">
-                    <p className="text-xs text-gray-500 mb-3">Saldo do mês atual</p>
+                  <div style={{ borderTop: `0.5px solid ${t.rowBorder}`, padding: '16px 24px', background: t.bg }}>
+                    <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>Saldo do mes atual</p>
                     {saldos.length === 0 ? (
-                      <p className="text-xs text-gray-400">Nenhum saldo gerado ainda</p>
+                      <p style={{ color: t.textFaint, fontSize: 12 }}>Nenhum saldo gerado ainda</p>
                     ) : (
-                      <div className="space-y-2">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {saldos.map(s => (
-                          <div key={s.id} className="flex items-center justify-between bg-white rounded-lg px-4 py-3 border border-gray-200">
+                          <div key={s.id} style={{ background: t.bgCard, border: `0.5px solid ${t.border}`, borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <div>
-                              <p className="text-sm text-gray-800">{s.servico_nome}</p>
-                              <p className="text-xs text-gray-400">{s.quantidade_usada} de {s.quantidade_total} usados</p>
+                              <p style={{ color: t.text, fontSize: 13, margin: '0 0 2px' }}>{s.servico_nome}</p>
+                              <p style={{ color: t.textFaint, fontSize: 11, margin: 0 }}>{s.quantidade_usada} de {s.quantidade_total} usados</p>
                             </div>
-                            <button
-                              onClick={() => marcarUso(s)}
-                              disabled={s.quantidade_usada >= s.quantidade_total}
-                              className="text-xs bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-lg px-3 py-1.5 transition-colors">
+                            <button onClick={() => marcarUso(s)} disabled={s.quantidade_usada >= s.quantidade_total}
+                              style={{ background: s.quantidade_usada >= s.quantidade_total ? t.bg : t.text, color: s.quantidade_usada >= s.quantidade_total ? t.textFaint : t.navBg, border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 11, cursor: 'pointer' }}>
                               {s.quantidade_usada >= s.quantidade_total ? 'Esgotado' : 'Marcar uso'}
                             </button>
                           </div>
