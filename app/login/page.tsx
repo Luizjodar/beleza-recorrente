@@ -40,7 +40,7 @@ export default function LoginPage() {
             <h2 style={{ color: '#fff', fontSize: 26, fontWeight: 300, letterSpacing: -0.5, margin: '0 0 16px', fontFamily: 'Georgia, serif', lineHeight: 1.4 }}>
               Gerencie seu salao com inteligencia
             </h2>
-            <p style={{ color: '#888', fontSize: 15, margin: 0, lineHeight: 1.8 }}>
+            <p style={{ color: '#aaa', fontSize: 15, margin: 0, lineHeight: 1.8 }}>
               Assinaturas, pagamentos e clientes — tudo em um so lugar.
             </p>
           </div>
@@ -49,7 +49,7 @@ export default function LoginPage() {
             {['Controle total de assinantes', 'Pagamentos automatizados', 'Retencao via WhatsApp'].map(item => (
               <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 7, height: 7, background: '#555', borderRadius: '50%', flexShrink: 0 }} />
-                <span style={{ color: '#777', fontSize: 14, letterSpacing: 0.3 }}>{item}</span>
+                <span style={{ color: '#bbb', fontSize: 14, letterSpacing: 0.3 }}>{item}</span>
               </div>
             ))}
             <div style={{ marginTop: 8, paddingTop: 24, borderTop: '0.5px solid #222' }}>
@@ -71,7 +71,7 @@ export default function LoginPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginBottom: 24 }}>
             <div>
-              <label style={{ fontSize: 11, letterSpacing: 2, color: '#999', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Email</label>
+              <label style={{ fontSize: 11, letterSpacing: 2, color: '#555', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Email</label>
               <input
                 type="email"
                 value={email}
@@ -81,7 +81,7 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label style={{ fontSize: 11, letterSpacing: 2, color: '#999', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Senha</label>
+              <label style={{ fontSize: 11, letterSpacing: 2, color: '#555', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Senha</label>
               <input
                 type="password"
                 value={senha}
@@ -107,7 +107,7 @@ export default function LoginPage() {
             {loading ? 'Aguarde...' : modo === 'login' ? 'Entrar' : 'Criar conta'}
           </button>
 
-          <p style={{ textAlign: 'center', fontSize: 13, color: '#999', marginTop: 24 }}>
+          <p style={{ textAlign: 'center', fontSize: 13, color: '#666', marginTop: 24 }}>
             {modo === 'login' ? 'Nao tem conta? ' : 'Ja tem conta? '}
             <span
               onClick={() => { setModo(modo === 'login' ? 'cadastro' : 'login'); setErro('') }}
