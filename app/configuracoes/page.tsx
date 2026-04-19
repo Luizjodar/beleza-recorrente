@@ -3,9 +3,12 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
+import { useTema } from '../lib/tema'
+import Navbar from '../components/Navbar'
 
 export default function ConfiguracoesPage() {
   const router = useRouter()
+  const { t } = useTema()
   const [salaoId, setSalaoId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -24,27 +27,19 @@ export default function ConfiguracoesPage() {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data: salao } = await supabase
-        .from('saloes').select('*').eq('user_id', user.id).single()
+      const { data: salao } = await supabase.from('saloes').select('*').eq('user_id', user.id).single()
       if (!salao) { router.push('/dashboard'); return }
       setSalaoId(salao.id)
-      setNome(salao.nome || '')
-      setSlug(salao.slug || '')
-      setSlugOriginal(salao.slug || '')
-      setCargo(salao.cargo || '')
-      setDescricao(salao.descricao || '')
-      setCidade(salao.cidade || '')
-      setWhatsapp(salao.whatsapp || '')
-      setEmailContato(salao.email_contato || '')
+      setNome(salao.nome || ''); setSlug(salao.slug || ''); setSlugOriginal(salao.slug || '')
+      setCargo(salao.cargo || ''); setDescricao(salao.descricao || '')
+      setCidade(salao.cidade || ''); setWhatsapp(salao.whatsapp || ''); setEmailContato(salao.email_contato || '')
       setLoading(false)
     }
     init()
   }, [])
 
   function gerarSlug(valor: string) {
-    return valor.toLowerCase().normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s-]/g, '')
-      .trim().replace(/\s+/g, '-')
+    return valor.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-')
   }
 
   function handleNome(valor: string) {
@@ -53,193 +48,127 @@ export default function ConfiguracoesPage() {
   }
 
   async function salvar() {
-    if (!nome || !slug || !whatsapp) {
-      setErro('Nome, link público e WhatsApp são obrigatórios.')
-      return
-    }
-    if (!/^[a-z0-9-]+$/.test(slug)) {
-      setErro('O link público só pode ter letras minúsculas, números e hífens.')
-      return
-    }
+    if (!nome || !slug || !whatsapp) { setErro('Nome, link publico e WhatsApp sao obrigatorios.'); return }
+    if (!/^[a-z0-9-]+$/.test(slug)) { setErro('O link publico so pode ter letras minusculas, numeros e hifens.'); return }
     if (slug !== slugOriginal) {
-      const { data: existente } = await supabase
-        .from('saloes').select('id').eq('slug', slug).neq('id', salaoId).single()
-      if (existente) { setErro('Este link já está em uso. Escolha outro.'); return }
+      const { data: existente } = await supabase.from('saloes').select('id').eq('slug', slug).neq('id', salaoId).single()
+      if (existente) { setErro('Este link ja esta em uso. Escolha outro.'); return }
     }
-    setSalvando(true)
-    setErro('')
-    const { error } = await supabase.from('saloes').update({
-      nome, slug, cargo, descricao, cidade, whatsapp, email_contato: emailContato,
-    }).eq('id', salaoId)
-    if (error) {
-      setErro('Erro ao salvar. Tente novamente.')
-    } else {
-      setSlugOriginal(slug)
-      setSucesso(true)
-      setTimeout(() => setSucesso(false), 3000)
-    }
+    setSalvando(true); setErro('')
+    const { error } = await supabase.from('saloes').update({ nome, slug, cargo, descricao, cidade, whatsapp, email_contato: emailContato }).eq('id', salaoId)
+    if (error) { setErro('Erro ao salvar. Tente novamente.') }
+    else { setSlugOriginal(slug); setSucesso(true); setTimeout(() => setSucesso(false), 3000) }
     setSalvando(false)
   }
 
-  const nav = [
-    { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Pacotes', path: '/pacotes' },
-    { label: 'Assinantes', path: '/assinantes' },
-    { label: 'Promocoes', path: '/promocoes' },
-    { label: 'Configuracoes', path: '/configuracoes' },
-  ]
+  const inputStyle = { width: '100%', border: `0.5px solid ${t.border}`, borderRadius: 10, padding: '11px 14px', background: t.bgInput, fontSize: 13, color: t.text, outline: 'none', boxSizing: 'border-box' as const }
+  const labelStyle = { color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase' as const, display: 'block', marginBottom: 7 }
+  const sectionStyle = { background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, overflow: 'hidden', marginBottom: 14 }
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <p className="text-gray-400 text-sm">Carregando...</p>
+    <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: t.textFaint, fontSize: 12, letterSpacing: 3 }}>CARREGANDO</p>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500" />
-          <span className="font-medium text-gray-900">Beleza Recorrente</span>
-        </div>
-        <div className="flex items-center gap-1">
-          {nav.map(item => (
-            <button key={item.path} onClick={() => router.push(item.path)}
-              className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
-                item.path === '/configuracoes'
-                  ? 'bg-gray-100 text-gray-900 font-medium'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}>
-              {item.label}
-            </button>
-          ))}
-          <button onClick={() => supabase.auth.signOut().then(() => router.push('/login'))}
-            className="text-sm text-gray-400 hover:text-gray-600 px-3 py-1.5 ml-2">
-            Sair
-          </button>
-        </div>
-      </div>
+    <div style={{ minHeight: '100vh', background: t.bg, fontFamily: 'system-ui, sans-serif' }}>
+      <Navbar />
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '40px 24px' }}>
 
-      <div className="max-w-2xl mx-auto px-6 py-10">
-        <div className="mb-8">
-          <h1 className="text-2xl font-medium text-gray-900">Configuracoes do salao</h1>
-          <p className="text-sm text-gray-400 mt-1">Informacoes exibidas na sua pagina publica</p>
+        <div style={{ marginBottom: 32 }}>
+          <p style={{ color: t.textMuted, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', margin: '0 0 6px' }}>Conta</p>
+          <h1 style={{ color: t.text, fontSize: 30, fontWeight: 300, margin: 0, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>Configuracoes</h1>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-
-          <div className="px-6 py-5 border-b border-gray-100">
-            <p className="text-xs text-gray-400 uppercase tracking-widest mb-4">Identidade</p>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-gray-600 block mb-1.5">Nome do salao</label>
-                <input value={nome} onChange={e => handleNome(e.target.value)}
-                  placeholder="Ex: Marcelo Rissato"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
-              </div>
-              <div>
-                <label className="text-sm text-gray-600 block mb-1.5">Cargo</label>
-                <input value={cargo} onChange={e => setCargo(e.target.value)}
-                  placeholder="Ex: Hair Designer"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
-              </div>
-              <div>
-                <label className="text-sm text-gray-600 block mb-1.5">Descricao</label>
-                <input value={descricao} onChange={e => setDescricao(e.target.value)}
-                  placeholder="Ex: Planos de assinatura exclusivos"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
-              </div>
-              <div>
-                <label className="text-sm text-gray-600 block mb-1.5">Cidade</label>
-                <input value={cidade} onChange={e => setCidade(e.target.value)}
-                  placeholder="Ex: Piracicaba, SP"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
-              </div>
-            </div>
+        {/* Identidade */}
+        <div style={sectionStyle}>
+          <div style={{ padding: '20px 24px', borderBottom: `0.5px solid ${t.rowBorder}` }}>
+            <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', margin: 0 }}>Identidade</p>
           </div>
+          <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div><label style={labelStyle}>Nome do salao</label><input value={nome} onChange={e => handleNome(e.target.value)} placeholder="Ex: Marcelo Rissato" style={inputStyle} /></div>
+            <div><label style={labelStyle}>Cargo</label><input value={cargo} onChange={e => setCargo(e.target.value)} placeholder="Ex: Hair Designer" style={inputStyle} /></div>
+            <div><label style={labelStyle}>Descricao curta</label><input value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Ex: Planos de assinatura exclusivos" style={inputStyle} /></div>
+            <div><label style={labelStyle}>Cidade</label><input value={cidade} onChange={e => setCidade(e.target.value)} placeholder="Ex: Piracicaba, SP" style={inputStyle} /></div>
+          </div>
+        </div>
 
-          <div className="px-6 py-5 border-b border-gray-100">
-            <p className="text-xs text-gray-400 uppercase tracking-widest mb-4">Link publico</p>
-            <div>
-              <label className="text-sm text-gray-600 block mb-1.5">Endereco da sua pagina</label>
-              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-emerald-400">
-                <span className="bg-gray-50 px-3 py-2 text-sm text-gray-400 border-r border-gray-200 whitespace-nowrap">
-                  beleza-recorrente.vercel.app/s/
-                </span>
-                <input value={slug} onChange={e => setSlug(gerarSlug(e.target.value))}
-                  placeholder="meu-salao"
-                  className="flex-1 px-3 py-2 text-sm outline-none bg-white" />
-              </div>
-              <p className="text-xs text-gray-400 mt-1.5">So letras minusculas, numeros e hifens.</p>
+        {/* Link publico */}
+        <div style={sectionStyle}>
+          <div style={{ padding: '20px 24px', borderBottom: `0.5px solid ${t.rowBorder}` }}>
+            <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', margin: 0 }}>Link publico</p>
+          </div>
+          <div style={{ padding: '24px' }}>
+            <label style={labelStyle}>Endereco da sua pagina</label>
+            <div style={{ display: 'flex', alignItems: 'center', border: `0.5px solid ${t.border}`, borderRadius: 10, overflow: 'hidden' }}>
+              <span style={{ background: t.bg, padding: '11px 14px', fontSize: 12, color: t.textMuted, borderRight: `0.5px solid ${t.border}`, whiteSpace: 'nowrap' }}>
+                beleza-recorrente.vercel.app/s/
+              </span>
+              <input value={slug} onChange={e => setSlug(gerarSlug(e.target.value))} placeholder="meu-salao"
+                style={{ flex: 1, border: 'none', padding: '11px 14px', background: t.bgInput, fontSize: 13, color: t.text, outline: 'none' }} />
             </div>
+            <p style={{ color: t.textFaint, fontSize: 11, marginTop: 8 }}>So letras minusculas, numeros e hifens.</p>
             {slug && (
-              <div className="mt-3 flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                <span className="text-xs text-gray-400">Seu link:</span>
-                <span className="text-xs text-emerald-600 font-medium">
-                  beleza-recorrente.vercel.app/s/{slug}
-                </span>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText('https://beleza-recorrente.vercel.app/s/' + slug)
-                    setSucesso(true)
-                    setTimeout(() => setSucesso(false), 2000)
-                  }}
-                  className="ml-auto text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-2 py-0.5">
+              <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: t.bg, borderRadius: 10, border: `0.5px solid ${t.border}` }}>
+                <span style={{ color: t.textFaint, fontSize: 11 }}>Seu link:</span>
+                <span style={{ color: t.textMuted, fontSize: 11, fontWeight: 500 }}>beleza-recorrente.vercel.app/s/{slug}</span>
+                <button onClick={() => { navigator.clipboard.writeText('https://beleza-recorrente.vercel.app/s/' + slug); setSucesso(true); setTimeout(() => setSucesso(false), 2000) }}
+                  style={{ marginLeft: 'auto', background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 6, padding: '3px 10px', fontSize: 11, cursor: 'pointer' }}>
                   Copiar
                 </button>
               </div>
             )}
           </div>
+        </div>
 
-          <div className="px-6 py-5 border-b border-gray-100">
-            <p className="text-xs text-gray-400 uppercase tracking-widest mb-4">Contato</p>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-gray-600 block mb-1.5">WhatsApp</label>
-                <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-emerald-400">
-                  <span className="bg-gray-50 px-3 py-2 text-sm text-gray-400 border-r border-gray-200">+</span>
-                  <input value={whatsapp} onChange={e => setWhatsapp(e.target.value.replace(/\D/g, ''))}
-                    placeholder="5519999999999"
-                    className="flex-1 px-3 py-2 text-sm outline-none bg-white" />
-                </div>
-                <p className="text-xs text-gray-400 mt-1.5">Codigo do pais + DDD + numero. Ex: 5519999999999</p>
+        {/* Contato */}
+        <div style={sectionStyle}>
+          <div style={{ padding: '20px 24px', borderBottom: `0.5px solid ${t.rowBorder}` }}>
+            <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', margin: 0 }}>Contato</p>
+          </div>
+          <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <label style={labelStyle}>WhatsApp</label>
+              <div style={{ display: 'flex', alignItems: 'center', border: `0.5px solid ${t.border}`, borderRadius: 10, overflow: 'hidden' }}>
+                <span style={{ background: t.bg, padding: '11px 14px', fontSize: 13, color: t.textMuted, borderRight: `0.5px solid ${t.border}` }}>+</span>
+                <input value={whatsapp} onChange={e => setWhatsapp(e.target.value.replace(/\D/g, ''))} placeholder="5519999999999"
+                  style={{ flex: 1, border: 'none', padding: '11px 14px', background: t.bgInput, fontSize: 13, color: t.text, outline: 'none' }} />
               </div>
-              <div>
-                <label className="text-sm text-gray-600 block mb-1.5">Email para notificacoes</label>
-                <input value={emailContato} onChange={e => setEmailContato(e.target.value)}
-                  placeholder="seu@email.com" type="email"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
-              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>Email para notificacoes</label>
+              <input value={emailContato} onChange={e => setEmailContato(e.target.value)} placeholder="seu@email.com" type="email" style={inputStyle} />
             </div>
           </div>
+        </div>
 
-          <div className="px-6 py-4 flex items-center justify-between">
+        {/* Footer */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px' }}>
+          <div>
+            {erro && <p style={{ color: '#ef4444', fontSize: 13, margin: 0 }}>{erro}</p>}
+            {sucesso && <p style={{ color: t.badgeAtivoText, fontSize: 13, margin: 0 }}>Salvo com sucesso!</p>}
+          </div>
+          <button onClick={salvar} disabled={salvando}
+            style={{ background: t.text, color: t.navBg, border: 'none', borderRadius: 10, padding: '11px 28px', fontSize: 12, cursor: 'pointer', opacity: salvando ? 0.5 : 1 }}>
+            {salvando ? 'Salvando...' : 'Salvar alteracoes'}
+          </button>
+        </div>
+
+        {/* Sair */}
+        <div style={{ ...sectionStyle, marginTop: 24 }}>
+          <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              {erro && <p className="text-sm text-red-500">{erro}</p>}
-              {sucesso && <p className="text-sm text-emerald-600">Salvo com sucesso!</p>}
+              <p style={{ color: t.text, fontSize: 13, margin: '0 0 3px' }}>Sair da conta</p>
+              <p style={{ color: t.textFaint, fontSize: 11, margin: 0 }}>Voce sera redirecionado para o login</p>
             </div>
-            <button onClick={salvar} disabled={salvando}
-              className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg px-6 py-2 text-sm font-medium transition-colors">
-              {salvando ? 'Salvando...' : 'Salvar alteracoes'}
+            <button onClick={() => supabase.auth.signOut().then(() => router.push('/login'))}
+              style={{ background: 'none', border: '0.5px solid #ef4444', color: '#ef4444', borderRadius: 8, padding: '7px 16px', fontSize: 12, cursor: 'pointer' }}>
+              Sair
             </button>
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden mt-6">
-          <div className="px-6 py-5">
-            <p className="text-xs text-gray-400 uppercase tracking-widest mb-4">Conta</p>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-700">Sair da conta</p>
-                <p className="text-xs text-gray-400 mt-0.5">Voce sera redirecionado para o login</p>
-              </div>
-              <button onClick={() => supabase.auth.signOut().then(() => router.push('/login'))}
-                className="text-sm text-red-400 hover:text-red-600 border border-red-100 hover:border-red-200 rounded-lg px-4 py-2 transition-colors">
-                Sair
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   )
