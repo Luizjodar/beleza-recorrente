@@ -3,11 +3,14 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
+import { useTema } from '../lib/tema'
+import Navbar from '../components/Navbar'
 
 type Item = { id?: string; servico_nome: string; quantidade: number }
 
 export default function PacotesPage() {
   const router = useRouter()
+  const { t } = useTema()
   const [salaoId, setSalaoId] = useState<string | null>(null)
   const [pacotes, setPacotes] = useState<any[]>([])
   const [criando, setCriando] = useState(false)
@@ -25,13 +28,12 @@ export default function PacotesPage() {
       let { data: salao } = await supabase.from('saloes').select('id').eq('user_id', user.id).single()
       if (!salao) {
         const { data: novo } = await supabase.from('saloes').insert({
-          user_id: user.id, nome: 'Meu Salão', slug: user.id.slice(0, 8),
+          user_id: user.id, nome: 'Meu Salao', slug: user.id.slice(0, 8),
         }).select().single()
         salao = novo
       }
       setSalaoId(salao!.id)
-await carregarPacotes(salao!.id)
-
+      await carregarPacotes(salao!.id)
       setLoading(false)
     }
     init()
@@ -98,81 +100,85 @@ await carregarPacotes(salao!.id)
     setPacotes(pacotes.filter(p => p.id !== id))
   }
 
-  if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-400 text-sm">Carregando...</p></div>
-  const formulario = criando || editando
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500" />
-          <span className="font-medium text-gray-900">Beleza Recorrente</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push('/dashboard')} className="text-sm text-gray-500 hover:text-gray-700">Dashboard</button>
-          <button onClick={() => supabase.auth.signOut().then(() => router.push('/login'))} className="text-sm text-gray-500 hover:text-gray-700">Sair</button>
-        </div>
-      </div>
+  const inputStyle = {
+    width: '100%', border: `0.5px solid ${t.border}`, borderRadius: 10,
+    padding: '11px 14px', background: t.bgInput, fontSize: 13,
+    color: t.text, outline: 'none', boxSizing: 'border-box' as const,
+  }
 
-      <div className="max-w-3xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-medium text-gray-900">Pacotes</h1>
+  if (loading) return (
+    <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: t.textFaint, fontSize: 12, letterSpacing: 3 }}>CARREGANDO</p>
+    </div>
+  )
+
+  const formulario = criando || editando
+
+  return (
+    <div style={{ minHeight: '100vh', background: t.bg, fontFamily: 'system-ui, sans-serif' }}>
+      <Navbar />
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 24px' }}>
+
+        <div style={{ marginBottom: 32, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ color: t.textMuted, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', margin: '0 0 6px' }}>Gestao</p>
+            <h1 style={{ color: t.text, fontSize: 30, fontWeight: 300, margin: 0, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>Pacotes</h1>
+          </div>
           {!formulario && (
-            <button onClick={abrirCriacao} className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
+            <button onClick={abrirCriacao}
+              style={{ background: t.text, color: t.navBg, border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 12, cursor: 'pointer', letterSpacing: 0.5 }}>
               + Novo pacote
             </button>
           )}
         </div>
 
         {formulario && (
-          <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-            <h2 className="text-base font-medium text-gray-900 mb-4">
+          <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '28px 32px', marginBottom: 20 }}>
+            <h2 style={{ color: t.text, fontSize: 16, fontWeight: 400, margin: '0 0 20px' }}>
               {editando ? `Editando: ${editando.nome}` : 'Novo pacote'}
             </h2>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Nome do pacote</label>
-                  <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Plano Prata"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Nome</label>
+                  <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Plano Prata" style={inputStyle} />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Preço mensal (R$)</label>
-                  <input value={preco} onChange={e => setPreco(e.target.value)} placeholder="Ex: 290" type="number"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Preco mensal (R$)</label>
+                  <input value={preco} onChange={e => setPreco(e.target.value)} placeholder="Ex: 290" type="number" style={inputStyle} />
                 </div>
               </div>
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Descrição (opcional)</label>
-                <input value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Ex: Ideal para quem vai ao salão todo mês"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Descricao (opcional)</label>
+                <input value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Ex: Ideal para quem vai ao salao todo mes" style={inputStyle} />
               </div>
               <div>
-                <label className="text-xs text-gray-500 block mb-2">Serviços incluídos</label>
-                <div className="space-y-2">
+                <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 10 }}>Servicos incluidos</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {itens.map((item, i) => (
-                    <div key={i} className="flex gap-2 items-center">
+                    <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <input value={item.servico_nome} onChange={e => updateItem(i, 'servico_nome', e.target.value)}
-                        placeholder="Ex: Corte feminino"
-                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                        placeholder="Ex: Corte feminino" style={{ ...inputStyle, flex: 1 }} />
                       <input value={item.quantidade} onChange={e => updateItem(i, 'quantidade', parseInt(e.target.value) || 1)}
-                        type="number" min="1" max="99"
-                        className="w-16 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 text-center" />
-                      <span className="text-xs text-gray-400">x/mês</span>
+                        type="number" min="1" max="99" style={{ ...inputStyle, width: 64, textAlign: 'center' }} />
+                      <span style={{ color: t.textFaint, fontSize: 11 }}>x/mes</span>
                       {itens.length > 1 && (
-                        <button onClick={() => removeItem(i)} className="text-gray-300 hover:text-red-400 text-lg leading-none">×</button>
+                        <button onClick={() => removeItem(i)} style={{ background: 'none', border: 'none', color: t.textMuted, fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>x</button>
                       )}
                     </div>
                   ))}
                 </div>
-                <button onClick={addItem} className="mt-2 text-sm text-emerald-600 hover:text-emerald-700">
-                  + Adicionar serviço
+                <button onClick={addItem} style={{ background: 'none', border: 'none', color: t.textMuted, fontSize: 13, cursor: 'pointer', marginTop: 8, padding: 0 }}>
+                  + Adicionar servico
                 </button>
               </div>
-              <div className="flex gap-3 pt-2">
-                <button onClick={salvarPacote} className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg px-5 py-2 text-sm font-medium transition-colors">
-                  {editando ? 'Salvar alterações' : 'Criar pacote'}
+              <div style={{ display: 'flex', gap: 12, paddingTop: 4 }}>
+                <button onClick={salvarPacote}
+                  style={{ background: t.text, color: t.navBg, border: 'none', borderRadius: 10, padding: '11px 24px', fontSize: 12, cursor: 'pointer' }}>
+                  {editando ? 'Salvar alteracoes' : 'Criar pacote'}
                 </button>
-                <button onClick={cancelar} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
+                <button onClick={cancelar}
+                  style={{ background: 'none', border: 'none', color: t.textMuted, fontSize: 13, cursor: 'pointer' }}>
                   Cancelar
                 </button>
               </div>
@@ -181,35 +187,35 @@ await carregarPacotes(salao!.id)
         )}
 
         {pacotes.length === 0 && !formulario ? (
-          <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
-            <p className="text-gray-400 text-sm">Nenhum pacote criado ainda</p>
+          <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '48px', textAlign: 'center' }}>
+            <p style={{ color: t.textFaint, fontSize: 13 }}>Nenhum pacote criado ainda</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {pacotes.map(p => (
-              <div key={p.id} className="bg-white border border-gray-200 rounded-xl p-5">
-                <div className="flex items-center justify-between mb-3">
+              <div key={p.id} style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '22px 28px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                   <div>
-                    <h3 className="font-medium text-gray-900">{p.nome}</h3>
-                    {p.descricao && <p className="text-xs text-gray-400 mt-0.5">{p.descricao}</p>}
+                    <h3 style={{ color: t.text, fontSize: 15, fontWeight: 500, margin: '0 0 3px' }}>{p.nome}</h3>
+                    {p.descricao && <p style={{ color: t.textFaint, fontSize: 12, margin: 0 }}>{p.descricao}</p>}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-emerald-600 font-medium">
-                      R$ {parseFloat(p.preco_mensal).toFixed(2).replace('.', ',')}/mês
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ color: t.textMuted, fontSize: 15, fontWeight: 300 }}>
+                      R$ {parseFloat(p.preco_mensal).toFixed(0)}/mes
                     </span>
                     <button onClick={() => abrirEdicao(p)}
-                      className="text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg px-3 py-1">
+                      style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer' }}>
                       Editar
                     </button>
                     <button onClick={() => excluirPacote(p.id)}
-                      className="text-xs text-red-400 hover:text-red-600 border border-red-100 hover:border-red-200 rounded-lg px-3 py-1">
+                      style={{ background: 'none', border: `0.5px solid ${t.border}`, color: '#ef4444', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer' }}>
                       Excluir
                     </button>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {p.pacote_itens?.map((item: any) => (
-                    <span key={item.id} className="text-xs bg-gray-100 text-gray-600 rounded-full px-3 py-1">
+                    <span key={item.id} style={{ background: t.bg, color: t.textMuted, fontSize: 11, border: `0.5px solid ${t.border}`, borderRadius: 20, padding: '4px 12px' }}>
                       {item.quantidade}x {item.servico_nome}
                     </span>
                   ))}
