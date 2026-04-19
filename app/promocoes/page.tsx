@@ -3,15 +3,17 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
+import { useTema } from '../lib/tema'
+import Navbar from '../components/Navbar'
 
 export default function PromocoesPage() {
   const router = useRouter()
+  const { t } = useTema()
   const [salaoId, setSalaoId] = useState<string | null>(null)
   const [promocoes, setPromocoes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [criando, setCriando] = useState(false)
   const [editando, setEditando] = useState<any | null>(null)
-
   const [titulo, setTitulo] = useState('')
   const [descricao, setDescricao] = useState('')
   const [precoOriginal, setPrecoOriginal] = useState('')
@@ -32,9 +34,7 @@ export default function PromocoesPage() {
   }, [])
 
   async function carregar(id: string) {
-    const { data } = await supabase.from('promocoes')
-      .select('*').eq('salao_id', id)
-      .order('criado_em', { ascending: false })
+    const { data } = await supabase.from('promocoes').select('*').eq('salao_id', id).order('criado_em', { ascending: false })
     setPromocoes(data || [])
   }
 
@@ -46,30 +46,20 @@ export default function PromocoesPage() {
   function abrirEdicao(p: any) {
     setEditando(p); setTitulo(p.titulo); setDescricao(p.descricao || '')
     setPrecoOriginal(p.preco_original?.toString() || '')
-    setPrecoPromo(p.preco_promo.toString())
-    setDataFim(p.data_fim); setCriando(false)
+    setPrecoPromo(p.preco_promo.toString()); setDataFim(p.data_fim); setCriando(false)
   }
 
   async function salvar() {
     if (!titulo || !precoPromo || !dataFim || !salaoId) return
-    const payload = {
-      salao_id: salaoId,
-      titulo, descricao,
-      preco_original: precoOriginal ? parseFloat(precoOriginal) : null,
-      preco_promo: parseFloat(precoPromo),
-      data_fim: dataFim,
-    }
-    if (editando) {
-      await supabase.from('promocoes').update(payload).eq('id', editando.id)
-    } else {
-      await supabase.from('promocoes').insert(payload)
-    }
+    const payload = { salao_id: salaoId, titulo, descricao, preco_original: precoOriginal ? parseFloat(precoOriginal) : null, preco_promo: parseFloat(precoPromo), data_fim: dataFim }
+    if (editando) await supabase.from('promocoes').update(payload).eq('id', editando.id)
+    else await supabase.from('promocoes').insert(payload)
     await carregar(salaoId)
     cancelar()
   }
 
   async function excluir(id: string) {
-    if (!confirm('Excluir esta promoção?')) return
+    if (!confirm('Excluir esta promocao?')) return
     await supabase.from('promocoes').delete().eq('id', id)
     setPromocoes(promocoes.filter(p => p.id !== id))
   }
@@ -84,119 +74,100 @@ export default function PromocoesPage() {
   const expiradas = promocoes.filter(p => !p.ativo || p.data_fim < hoje)
   const formulario = criando || editando
 
+  const inputStyle = { width: '100%', border: `0.5px solid ${t.border}`, borderRadius: 10, padding: '11px 14px', background: t.bgInput, fontSize: 13, color: t.text, outline: 'none', boxSizing: 'border-box' as const }
+
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <p className="text-gray-400 text-sm">Carregando...</p>
+    <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: t.textFaint, fontSize: 12, letterSpacing: 3 }}>CARREGANDO</p>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500" />
-          <span className="font-medium text-gray-900">Beleza Recorrente</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push('/dashboard')} className="text-sm text-gray-500 hover:text-gray-700">Dashboard</button>
-          <button onClick={() => router.push('/pacotes')} className="text-sm text-gray-500 hover:text-gray-700">Pacotes</button>
-          <button onClick={() => router.push('/assinantes')} className="text-sm text-gray-500 hover:text-gray-700">Assinantes</button>
-          <button onClick={() => supabase.auth.signOut().then(() => router.push('/login'))} className="text-sm text-gray-500 hover:text-gray-700">Sair</button>
-        </div>
-      </div>
+    <div style={{ minHeight: '100vh', background: t.bg, fontFamily: 'system-ui, sans-serif' }}>
+      <Navbar />
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 24px' }}>
 
-      <div className="max-w-3xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-medium text-gray-900">Promoções</h1>
+        <div style={{ marginBottom: 32, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ color: t.textMuted, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', margin: '0 0 6px' }}>Marketing</p>
+            <h1 style={{ color: t.text, fontSize: 30, fontWeight: 300, margin: 0, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>Promocoes</h1>
+          </div>
           {!formulario && (
             <button onClick={() => setCriando(true)}
-              className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
-              + Nova promoção
+              style={{ background: t.text, color: t.navBg, border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 12, cursor: 'pointer' }}>
+              + Nova promocao
             </button>
           )}
         </div>
 
         {formulario && (
-          <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-            <h2 className="text-base font-medium text-gray-900 mb-4">
-              {editando ? 'Editando promoção' : 'Nova promoção'}
+          <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '28px 32px', marginBottom: 20 }}>
+            <h2 style={{ color: t.text, fontSize: 16, fontWeight: 400, margin: '0 0 20px' }}>
+              {editando ? 'Editando promocao' : 'Nova promocao'}
             </h2>
-            <div className="space-y-4">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Título da promoção</label>
-                <input value={titulo} onChange={e => setTitulo(e.target.value)}
-                  placeholder="Ex: Escova + Hidratação especial"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Titulo</label>
+                <input value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="Ex: Escova + Hidratacao especial" style={inputStyle} />
               </div>
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Descrição (opcional)</label>
-                <input value={descricao} onChange={e => setDescricao(e.target.value)}
-                  placeholder="Ex: Inclui escova modeladora e hidratação profunda"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Descricao (opcional)</label>
+                <input value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Ex: Inclui escova modeladora e hidratacao profunda" style={inputStyle} />
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Preço original (R$)</label>
-                  <input value={precoOriginal} onChange={e => setPrecoOriginal(e.target.value)}
-                    placeholder="Ex: 350" type="number"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Preco original (R$)</label>
+                  <input value={precoOriginal} onChange={e => setPrecoOriginal(e.target.value)} placeholder="Ex: 350" type="number" style={inputStyle} />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Preço promocional (R$)</label>
-                  <input value={precoPromo} onChange={e => setPrecoPromo(e.target.value)}
-                    placeholder="Ex: 250" type="number"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Preco promo (R$)</label>
+                  <input value={precoPromo} onChange={e => setPrecoPromo(e.target.value)} placeholder="Ex: 250" type="number" style={inputStyle} />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Válida até</label>
-                  <input value={dataFim} onChange={e => setDataFim(e.target.value)}
-                    type="date" min={hoje}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Valida ate</label>
+                  <input value={dataFim} onChange={e => setDataFim(e.target.value)} type="date" min={hoje} style={inputStyle} />
                 </div>
               </div>
-              <div className="flex gap-3 pt-2">
+              <div style={{ display: 'flex', gap: 12, paddingTop: 4 }}>
                 <button onClick={salvar}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg px-5 py-2 text-sm font-medium transition-colors">
-                  {editando ? 'Salvar alterações' : 'Criar promoção'}
+                  style={{ background: t.text, color: t.navBg, border: 'none', borderRadius: 10, padding: '11px 24px', fontSize: 12, cursor: 'pointer' }}>
+                  {editando ? 'Salvar alteracoes' : 'Criar promocao'}
                 </button>
-                <button onClick={cancelar} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
-                  Cancelar
-                </button>
+                <button onClick={cancelar} style={{ background: 'none', border: 'none', color: t.textMuted, fontSize: 13, cursor: 'pointer' }}>Cancelar</button>
               </div>
             </div>
           </div>
         )}
 
         {ativas.length > 0 && (
-          <div className="mb-6">
-            <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Ativas agora</p>
-            <div className="space-y-3">
+          <div style={{ marginBottom: 24 }}>
+            <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 12 }}>Ativas agora</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {ativas.map(p => (
-                <div key={p.id} className="bg-white border border-gray-200 rounded-xl p-5">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">Ativa</span>
-                        <span className="text-xs text-gray-400">até {new Date(p.data_fim).toLocaleDateString('pt-BR')}</span>
+                <div key={p.id} style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '20px 24px', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: 3, height: '100%', background: t.accentBar }} />
+                  <div style={{ paddingLeft: 12, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <span style={{ background: t.badgeAtivo, color: t.badgeAtivoText, fontSize: 10, padding: '2px 8px', borderRadius: 20 }}>Ativa</span>
+                        <span style={{ color: t.textFaint, fontSize: 11 }}>ate {new Date(p.data_fim + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}</span>
                       </div>
-                      <h3 className="font-medium text-gray-900">{p.titulo}</h3>
-                      {p.descricao && <p className="text-xs text-gray-400 mt-1">{p.descricao}</p>}
-                      <div className="flex items-center gap-3 mt-2">
+                      <h3 style={{ color: t.text, fontSize: 15, fontWeight: 400, margin: '0 0 4px' }}>{p.titulo}</h3>
+                      {p.descricao && <p style={{ color: t.textFaint, fontSize: 12, margin: '0 0 10px' }}>{p.descricao}</p>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        {p.preco_original && <span style={{ color: t.textFaint, fontSize: 13, textDecoration: 'line-through' }}>R$ {parseFloat(p.preco_original).toFixed(0)}</span>}
+                        <span style={{ color: t.text, fontSize: 20, fontWeight: 300 }}>R$ {parseFloat(p.preco_promo).toFixed(0)}</span>
                         {p.preco_original && (
-                          <span className="text-sm text-gray-400 line-through">R$ {parseFloat(p.preco_original).toFixed(0)}</span>
-                        )}
-                        <span className="text-lg font-medium text-emerald-600">R$ {parseFloat(p.preco_promo).toFixed(0)}</span>
-                        {p.preco_original && (
-                          <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full">
-                            -{Math.round((1 - p.preco_promo / p.preco_original) * 100)}% off
+                          <span style={{ background: t.text, color: t.navBg, fontSize: 10, padding: '2px 8px', borderRadius: 20 }}>
+                            -{Math.round((1 - p.preco_promo / p.preco_original) * 100)}% OFF
                           </span>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <button onClick={() => toggleAtivo(p)} className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg px-3 py-1">Pausar</button>
-                      <button onClick={() => abrirEdicao(p)} className="text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg px-3 py-1">Editar</button>
-                      <button onClick={() => excluir(p.id)} className="text-xs text-red-400 hover:text-red-600 border border-red-100 rounded-lg px-3 py-1">Excluir</button>
+                    <div style={{ display: 'flex', gap: 8, marginLeft: 16 }}>
+                      <button onClick={() => toggleAtivo(p)} style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 8, padding: '5px 12px', fontSize: 11, cursor: 'pointer' }}>Pausar</button>
+                      <button onClick={() => abrirEdicao(p)} style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 8, padding: '5px 12px', fontSize: 11, cursor: 'pointer' }}>Editar</button>
+                      <button onClick={() => excluir(p.id)} style={{ background: 'none', border: `0.5px solid ${t.border}`, color: '#ef4444', borderRadius: 8, padding: '5px 12px', fontSize: 11, cursor: 'pointer' }}>Excluir</button>
                     </div>
                   </div>
                 </div>
@@ -207,20 +178,17 @@ export default function PromocoesPage() {
 
         {expiradas.length > 0 && (
           <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Expiradas / Pausadas</p>
-            <div className="space-y-3">
+            <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 12 }}>Expiradas / Pausadas</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {expiradas.map(p => (
-                <div key={p.id} className="bg-white border border-gray-200 rounded-xl p-5 opacity-50">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{p.data_fim < hoje ? 'Expirada' : 'Pausada'}</span>
-                      </div>
-                      <h3 className="font-medium text-gray-900">{p.titulo}</h3>
-                      <span className="text-sm text-gray-600">R$ {parseFloat(p.preco_promo).toFixed(0)}</span>
-                    </div>
-                    <button onClick={() => excluir(p.id)} className="text-xs text-red-400 hover:text-red-600 border border-red-100 rounded-lg px-3 py-1">Excluir</button>
+                <div key={p.id} style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '16px 24px', opacity: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <span style={{ background: t.bg, color: t.textMuted, fontSize: 10, padding: '2px 8px', borderRadius: 20, marginBottom: 6, display: 'inline-block' }}>
+                      {p.data_fim < hoje ? 'Expirada' : 'Pausada'}
+                    </span>
+                    <p style={{ color: t.text, fontSize: 14, margin: '4px 0 0' }}>{p.titulo}</p>
                   </div>
+                  <button onClick={() => excluir(p.id)} style={{ background: 'none', border: `0.5px solid ${t.border}`, color: '#ef4444', borderRadius: 8, padding: '5px 12px', fontSize: 11, cursor: 'pointer' }}>Excluir</button>
                 </div>
               ))}
             </div>
@@ -228,11 +196,11 @@ export default function PromocoesPage() {
         )}
 
         {promocoes.length === 0 && !formulario && (
-          <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
-            <p className="text-gray-400 text-sm mb-3">Nenhuma promoção criada ainda</p>
+          <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: 48, textAlign: 'center' }}>
+            <p style={{ color: t.textFaint, fontSize: 13, marginBottom: 16 }}>Nenhuma promocao criada ainda</p>
             <button onClick={() => setCriando(true)}
-              className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
-              Criar primeira promoção
+              style={{ background: t.text, color: t.navBg, border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 12, cursor: 'pointer' }}>
+              Criar primeira promocao
             </button>
           </div>
         )}
