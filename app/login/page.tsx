@@ -64,7 +64,7 @@ export default function LoginPage() {
             <h1 style={{ fontSize: 26, fontWeight: 400, color: '#111', margin: '0 0 8px', letterSpacing: -0.5 }}>
               {modo === 'login' ? 'Entrar na conta' : 'Criar conta'}
             </h1>
-            <p style={{ fontSize: 14, color: '#888', margin: 0 }}>
+            <p style={{ fontSize: 14, color: '#555', margin: 0 }}>
               {modo === 'login' ? 'Bem-vindo de volta' : 'Comece gratuitamente'}
             </p>
           </div>
@@ -107,7 +107,7 @@ export default function LoginPage() {
             {loading ? 'Aguarde...' : modo === 'login' ? 'Entrar' : 'Criar conta'}
           </button>
 
-          <p style={{ textAlign: 'center', fontSize: 13, color: '#666', marginTop: 24 }}>
+          <p style={{ textAlign: 'center', fontSize: 13, color: '#555', marginTop: 24 }}>
             {modo === 'login' ? 'Nao tem conta? ' : 'Ja tem conta? '}
             <span
               onClick={() => { setModo(modo === 'login' ? 'cadastro' : 'login'); setErro('') }}
