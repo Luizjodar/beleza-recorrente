@@ -15,15 +15,32 @@ export default function LoginPage() {
   async function handleSubmit() {
     setErro('')
     setLoading(true)
+
     if (modo === 'cadastro') {
       const { error } = await supabase.auth.signUp({ email, password: senha })
       if (error) { setErro(error.message); setLoading(false); return }
       setErro('Verifique seu email para confirmar o cadastro!')
+      setLoading(false)
+      return
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha })
+    if (error) { setErro('Email ou senha incorretos'); setLoading(false); return }
+
+    // Verifica se salao ja esta configurado
+    const { data: salao } = await supabase
+      .from('saloes')
+      .select('nome, whatsapp, slug, user_id')
+      .eq('user_id', data.user.id)
+      .single()
+
+    // Se nao tem salao ou nao tem whatsapp configurado, vai para onboarding
+    if (!salao || !salao.whatsapp || !salao.nome) {
+      router.push('/onboarding')
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
-      if (error) { setErro('Email ou senha incorretos'); setLoading(false); return }
       router.push('/dashboard')
     }
+
     setLoading(false)
   }
 
@@ -34,13 +51,13 @@ export default function LoginPage() {
         {/* Painel esquerdo */}
         <div style={{ flex: 1, background: '#111', padding: '56px 48px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ width: 36, height: 36, border: '1.5px solid #444', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 48 }}>
+            <div style={{ width: 36, height: 36, border: '1.5px solid #333', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 48 }}>
               <div style={{ width: 14, height: 14, background: '#fff', borderRadius: 3 }} />
             </div>
             <h2 style={{ color: '#fff', fontSize: 26, fontWeight: 300, letterSpacing: -0.5, margin: '0 0 16px', fontFamily: 'Georgia, serif', lineHeight: 1.4 }}>
               Gerencie seu salao com inteligencia
             </h2>
-            <p style={{ color: '#aaa', fontSize: 15, margin: 0, lineHeight: 1.8 }}>
+            <p style={{ color: '#888', fontSize: 15, margin: 0, lineHeight: 1.8 }}>
               Assinaturas, pagamentos e clientes — tudo em um so lugar.
             </p>
           </div>
@@ -48,8 +65,8 @@ export default function LoginPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {['Controle total de assinantes', 'Pagamentos automatizados', 'Retencao via WhatsApp'].map(item => (
               <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 7, height: 7, background: '#555', borderRadius: '50%', flexShrink: 0 }} />
-                <span style={{ color: '#bbb', fontSize: 14, letterSpacing: 0.3 }}>{item}</span>
+                <div style={{ width: 7, height: 7, background: '#444', borderRadius: '50%', flexShrink: 0 }} />
+                <span style={{ color: '#777', fontSize: 14, letterSpacing: 0.3 }}>{item}</span>
               </div>
             ))}
             <div style={{ marginTop: 8, paddingTop: 24, borderTop: '0.5px solid #222' }}>
@@ -71,25 +88,17 @@ export default function LoginPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginBottom: 24 }}>
             <div>
-              <label style={{ fontSize: 11, letterSpacing: 2, color: '#555', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
+              <label style={{ fontSize: 11, letterSpacing: 2, color: '#999', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="seu@email.com"
-                style={{ width: '100%', border: '1px solid #e0deda', borderRadius: 10, padding: '13px 16px', background: '#fafaf9', fontSize: 14, color: '#111', outline: 'none', boxSizing: 'border-box' }}
-              />
+                style={{ width: '100%', border: '0.5px solid #e0deda', borderRadius: 10, padding: '13px 16px', background: '#fafaf9', fontSize: 14, color: '#111', outline: 'none', boxSizing: 'border-box' }} />
             </div>
             <div>
-              <label style={{ fontSize: 11, letterSpacing: 2, color: '#555', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Senha</label>
-              <input
-                type="password"
-                value={senha}
-                onChange={e => setSenha(e.target.value)}
+              <label style={{ fontSize: 11, letterSpacing: 2, color: '#999', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Senha</label>
+              <input type="password" value={senha} onChange={e => setSenha(e.target.value)}
                 placeholder="••••••••"
                 onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                style={{ width: '100%', border: '1px solid #e0deda', borderRadius: 10, padding: '13px 16px', background: '#fafaf9', fontSize: 14, color: '#111', outline: 'none', boxSizing: 'border-box' }}
-              />
+                style={{ width: '100%', border: '0.5px solid #e0deda', borderRadius: 10, padding: '13px 16px', background: '#fafaf9', fontSize: 14, color: '#111', outline: 'none', boxSizing: 'border-box' }} />
             </div>
           </div>
 
@@ -99,20 +108,15 @@ export default function LoginPage() {
             </p>
           )}
 
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            style={{ width: '100%', background: loading ? '#999' : '#111', color: '#fff', border: 'none', borderRadius: 10, padding: 15, fontSize: 12, letterSpacing: 3, textTransform: 'uppercase', cursor: 'pointer', transition: 'background 0.2s' }}
-          >
-            {loading ? 'Aguarde...' : modo === 'login' ? 'Entrar' : 'Criar conta'}
+          <button onClick={handleSubmit} disabled={loading}
+            style={{ width: '100%', background: loading ? '#999' : '#111', color: '#fff', border: 'none', borderRadius: 10, padding: 15, fontSize: 12, letterSpacing: 3, textTransform: 'uppercase', cursor: 'pointer', transition: 'background 0.2s' }}>
+            {loading ? 'AGUARDE...' : modo === 'login' ? 'ENTRAR' : 'CRIAR CONTA'}
           </button>
 
           <p style={{ textAlign: 'center', fontSize: 13, color: '#555', marginTop: 24 }}>
             {modo === 'login' ? 'Nao tem conta? ' : 'Ja tem conta? '}
-            <span
-              onClick={() => { setModo(modo === 'login' ? 'cadastro' : 'login'); setErro('') }}
-              style={{ color: '#111', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500 }}
-            >
+            <span onClick={() => { setModo(modo === 'login' ? 'cadastro' : 'login'); setErro('') }}
+              style={{ color: '#111', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500 }}>
               {modo === 'login' ? 'Cadastre-se' : 'Entre'}
             </span>
           </p>
