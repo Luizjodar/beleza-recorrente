@@ -25,6 +25,7 @@ export default function Navbar() {
 
   const nav = [
     { label: 'Dashboard', path: '/dashboard' },
+    { label: 'Agenda', path: '/agenda' },
     { label: 'Pacotes', path: '/pacotes' },
     { label: 'Assinantes', path: '/assinantes' },
     { label: 'Pagamentos', path: '/pagamentos' },
@@ -50,7 +51,6 @@ export default function Navbar() {
 
       <div style={{ background: t.navBg, borderBottom: `0.5px solid ${t.navBorder}`, padding: '0 20px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
 
-        {/* Logo + nome */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 28, height: 28, background: t.text, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <div style={{ width: 10, height: 10, background: t.navBg, borderRadius: 2 }} />
@@ -60,7 +60,6 @@ export default function Navbar() {
           </span>
         </div>
 
-        {/* Desktop nav */}
         <div className="nav-desktop" style={{ alignItems: 'center', gap: 2 }}>
           {nav.map(item => (
             <button key={item.path} onClick={() => navegar(item.path)}
@@ -79,7 +78,6 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* Mobile hamburger */}
         <div className="nav-hamburger" style={{ alignItems: 'center', gap: 8 }}>
           <button onClick={toggleTema}
             style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', padding: 4 }}>
@@ -92,7 +90,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Menu mobile */}
       {menuAberto && (
         <div style={{ position: 'fixed', top: 56, left: 0, right: 0, bottom: 0, background: t.navBg, zIndex: 99, padding: 24, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {nav.map(item => (
