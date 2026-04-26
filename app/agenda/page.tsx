@@ -7,12 +7,28 @@ import { useTema } from '../lib/tema'
 import Navbar from '../components/Navbar'
 
 const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab']
-const DIAS_FULL = ['Domingo', 'Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado']
-const STATUS_COLOR: any = {
-  pendente: { bg: '#fffbeb', text: '#d97706' },
-  confirmado: { bg: '#f0fdf4', text: '#16a34a' },
-  cancelado: { bg: '#fef2f2', text: '#dc2626' },
-  concluido: { bg: '#f5f4f0', text: '#888' },
+const DIAS_FULL = ['Domingo', 'Segunda-feira', 'Terca-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sabado']
+
+const STATUS_CONFIG: any = {
+  pendente:   { bg: '#fef9ec', text: '#b45309', dot: '#f59e0b', label: 'Pendente' },
+  confirmado: { bg: '#f0fdf4', text: '#15803d', dot: '#22c55e', label: 'Confirmado' },
+  concluido:  { bg: '#f5f5f5', text: '#666',    dot: '#aaa',    label: 'Concluido' },
+  cancelado:  { bg: '#fff1f2', text: '#be123c', dot: '#f43f5e', label: 'Cancelado' },
+}
+
+function gerarHorarios(inicio: string, fim: string, intervalo: number): string[] {
+  const result: string[] = []
+  const [hi, mi] = inicio.split(':').map(Number)
+  const [hf, mf] = fim.split(':').map(Number)
+  let mins = hi * 60 + mi
+  const fimMins = hf * 60 + mf
+  while (mins < fimMins) {
+    const h = Math.floor(mins / 60).toString().padStart(2, '0')
+    const m = (mins % 60).toString().padStart(2, '0')
+    result.push(`${h}:${m}`)
+    mins += intervalo
+  }
+  return result
 }
 
 export default function AgendaPage() {
@@ -21,32 +37,31 @@ export default function AgendaPage() {
   const [salaoId, setSalaoId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [agendamentos, setAgendamentos] = useState<any[]>([])
+  const [horariosSalao, setHorariosSalao] = useState<any[]>([])
   const [semanaOffset, setSemanaOffset] = useState(0)
-  const [diaSelecionado, setDiaSelecionado] = useState<string | null>(null)
   const [novoAberto, setNovoAberto] = useState(false)
   const [processando, setProcessando] = useState<string | null>(null)
 
-  // Form novo agendamento
-  const [nomeCliente, setNomeCliente] = useState('')
-  const [whatsCliente, setWhatsCliente] = useState('')
-  const [servico, setServico] = useState('')
-  const [dataAg, setDataAg] = useState('')
-  const [horarioAg, setHorarioAg] = useState('')
-  const [obs, setObs] = useState('')
-
-  // Semana atual
   const hoje = new Date()
+  const [diaSelecionado, setDiaSelecionado] = useState(hoje.toISOString().split('T')[0])
+
   const inicioSemana = new Date(hoje)
   inicioSemana.setDate(hoje.getDate() - hoje.getDay() + semanaOffset * 7)
-
   const diasSemana = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(inicioSemana)
     d.setDate(inicioSemana.getDate() + i)
     return d
   })
-
   const dataInicio = diasSemana[0].toISOString().split('T')[0]
   const dataFim = diasSemana[6].toISOString().split('T')[0]
+
+  // Form
+  const [nomeCliente, setNomeCliente] = useState('')
+  const [whatsCliente, setWhatsCliente] = useState('')
+  const [servico, setServico] = useState('')
+  const [dataAg, setDataAg] = useState(diaSelecionado)
+  const [horarioAg, setHorarioAg] = useState('')
+  const [obs, setObs] = useState('')
 
   useEffect(() => {
     async function init() {
@@ -55,35 +70,44 @@ export default function AgendaPage() {
       const { data: salao } = await supabase.from('saloes').select('id').eq('user_id', user.id).single()
       if (!salao) { router.push('/dashboard'); return }
       setSalaoId(salao.id)
-      await carregar(salao.id, dataInicio, dataFim)
+      const [{ data: ags }, { data: hs }] = await Promise.all([
+        supabase.from('agendamentos').select('*').eq('salao_id', salao.id)
+          .gte('data', dataInicio).lte('data', dataFim).order('data').order('horario'),
+        supabase.from('horarios_salao').select('*').eq('salao_id', salao.id),
+      ])
+      setAgendamentos(ags || [])
+      setHorariosSalao(hs || [])
       setLoading(false)
     }
     init()
   }, [])
 
   useEffect(() => {
-    if (salaoId) carregar(salaoId, dataInicio, dataFim)
+    if (salaoId) recarregar()
   }, [semanaOffset, salaoId])
 
-  async function carregar(id: string, inicio: string, fim: string) {
-    const { data } = await supabase.from('agendamentos')
-      .select('*').eq('salao_id', id)
-      .gte('data', inicio).lte('data', fim)
-      .order('data').order('horario')
-    setAgendamentos(data || [])
+  async function recarregar() {
+    if (!salaoId) return
+    const [{ data: ags }, { data: hs }] = await Promise.all([
+      supabase.from('agendamentos').select('*').eq('salao_id', salaoId)
+        .gte('data', dataInicio).lte('data', dataFim).order('data').order('horario'),
+      supabase.from('horarios_salao').select('*').eq('salao_id', salaoId),
+    ])
+    setAgendamentos(ags || [])
+    setHorariosSalao(hs || [])
   }
 
   async function salvarAgendamento() {
     if (!nomeCliente || !dataAg || !horarioAg || !salaoId) return
     setProcessando('novo')
-    const { data } = await supabase.from('agendamentos').insert({
+    await supabase.from('agendamentos').insert({
       salao_id: salaoId, cliente_nome: nomeCliente,
-      cliente_whatsapp: whatsCliente, servico, data: dataAg,
-      horario: horarioAg, observacao: obs,
-    }).select().single()
-    if (data) setAgendamentos([...agendamentos, data].sort((a, b) => a.horario.localeCompare(b.horario)))
-    setNomeCliente(''); setWhatsCliente(''); setServico(''); setDataAg(''); setHorarioAg(''); setObs('')
-    setNovoAberto(false)
+      cliente_whatsapp: whatsCliente, servico,
+      data: dataAg, horario: horarioAg + ':00', observacao: obs,
+    })
+    await recarregar()
+    setNomeCliente(''); setWhatsCliente(''); setServico('')
+    setHorarioAg(''); setObs(''); setNovoAberto(false)
     setProcessando(null)
   }
 
@@ -101,9 +125,23 @@ export default function AgendaPage() {
   }
 
   const agDia = (data: string) => agendamentos.filter(a => a.data === data)
+  const agHoje = agDia(diaSelecionado)
   const diaHoje = hoje.toISOString().split('T')[0]
 
-  const inputStyle = { width: '100%', border: `0.5px solid ${t.border}`, borderRadius: 10, padding: '10px 14px', background: t.bgInput, fontSize: 13, color: t.text, outline: 'none', boxSizing: 'border-box' as const }
+  // Horarios disponiveis para o dia selecionado
+  const diaSemanaNum = new Date(diaSelecionado + 'T12:00:00').getDay()
+  const configDia = horariosSalao.find(h => h.dia_semana === diaSemanaNum && h.ativo)
+  const horariosDisponiveis = configDia
+    ? gerarHorarios(configDia.hora_inicio, configDia.hora_fim, configDia.intervalo_min)
+    : []
+
+  const receita = agHoje.filter(a => a.status !== 'cancelado').length * 0
+
+  const inputStyle = {
+    width: '100%', border: `0.5px solid ${t.border}`, borderRadius: 10,
+    padding: '10px 14px', background: t.bgInput, fontSize: 13,
+    color: t.text, outline: 'none', boxSizing: 'border-box' as const,
+  }
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -111,176 +149,298 @@ export default function AgendaPage() {
     </div>
   )
 
+  const diaSelecionadoObj = new Date(diaSelecionado + 'T12:00:00')
+
   return (
     <div style={{ minHeight: '100vh', background: t.bg, fontFamily: 'system-ui, sans-serif' }}>
       <Navbar />
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '40px 24px' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
 
-        <div style={{ marginBottom: 32, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        {/* Header */}
+        <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <p style={{ color: t.textMuted, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', margin: '0 0 6px' }}>Gestao</p>
-            <h1 style={{ color: t.text, fontSize: 30, fontWeight: 300, margin: 0, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>Agenda</h1>
+            <p style={{ color: t.textMuted, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', margin: '0 0 4px' }}>Gestao</p>
+            <h1 style={{ color: t.text, fontSize: 28, fontWeight: 300, margin: 0, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>Agenda</h1>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => router.push('/agenda/horarios')}
-              style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 10, padding: '10px 16px', fontSize: 12, cursor: 'pointer' }}>
+              style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 10, padding: '9px 16px', fontSize: 12, cursor: 'pointer' }}>
               Configurar horarios
             </button>
-            <button onClick={() => setNovoAberto(true)}
-              style={{ background: t.text, color: t.bg, border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 12, cursor: 'pointer' }}>
+            <button onClick={() => { setDataAg(diaSelecionado); setNovoAberto(true) }}
+              style={{ background: t.text, color: t.bg, border: 'none', borderRadius: 10, padding: '9px 18px', fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>
               + Novo agendamento
             </button>
           </div>
         </div>
 
         {/* Navegacao semanal */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <button onClick={() => setSemanaOffset(semanaOffset - 1)}
-            style={{ background: t.bgCard, border: `0.5px solid ${t.border}`, color: t.text, borderRadius: 8, padding: '8px 16px', fontSize: 13, cursor: 'pointer' }}>
-            ←
-          </button>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ color: t.text, fontSize: 14, fontWeight: 500, margin: 0 }}>
-              {diasSemana[0].toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} — {diasSemana[6].toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
-            </p>
-            {semanaOffset !== 0 && (
-              <button onClick={() => setSemanaOffset(0)}
-                style={{ background: 'none', border: 'none', color: t.textMuted, fontSize: 11, cursor: 'pointer', marginTop: 2 }}>
-                Voltar para hoje
-              </button>
-            )}
-          </div>
+            style={{ background: t.bgCard, border: `0.5px solid ${t.border}`, color: t.text, borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer' }}>←</button>
+          <p style={{ color: t.text, fontSize: 13, fontWeight: 500, margin: 0, flex: 1, textAlign: 'center' }}>
+            {diasSemana[0].toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} — {diasSemana[6].toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+          </p>
+          {semanaOffset !== 0 && (
+            <button onClick={() => { setSemanaOffset(0); setDiaSelecionado(diaHoje) }}
+              style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 8, padding: '7px 12px', fontSize: 11, cursor: 'pointer' }}>
+              Hoje
+            </button>
+          )}
           <button onClick={() => setSemanaOffset(semanaOffset + 1)}
-            style={{ background: t.bgCard, border: `0.5px solid ${t.border}`, color: t.text, borderRadius: 8, padding: '8px 16px', fontSize: 13, cursor: 'pointer' }}>
-            →
-          </button>
+            style={{ background: t.bgCard, border: `0.5px solid ${t.border}`, color: t.text, borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer' }}>→</button>
         </div>
 
         {/* Grade semanal */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 24 }}>
           {diasSemana.map((dia, i) => {
             const dataStr = dia.toISOString().split('T')[0]
             const ags = agDia(dataStr)
             const isHoje = dataStr === diaHoje
             const isSelecionado = diaSelecionado === dataStr
+            const pendentes = ags.filter(a => a.status === 'pendente').length
+            const confirmados = ags.filter(a => a.status === 'confirmado').length
             return (
-              <div key={i} onClick={() => setDiaSelecionado(isSelecionado ? null : dataStr)}
-                style={{ background: isSelecionado ? t.text : t.bgCard, border: `0.5px solid ${isHoje ? t.accentBar : t.borderCard}`, borderRadius: 14, padding: '12px 8px', cursor: 'pointer', transition: 'all 0.15s', minHeight: 80 }}>
-                <p style={{ color: isSelecionado ? t.bg : t.textFaint, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', margin: '0 0 4px', textAlign: 'center' }}>{DIAS[i]}</p>
-                <p style={{ color: isSelecionado ? t.bg : isHoje ? t.text : t.text, fontSize: 18, fontWeight: isHoje ? 500 : 300, margin: '0 0 8px', textAlign: 'center' }}>
-                  {dia.getDate()}
-                </p>
-                {ags.length > 0 && (
+              <div key={i} onClick={() => setDiaSelecionado(dataStr)}
+                style={{ background: isSelecionado ? t.text : t.bgCard, border: `0.5px solid ${isHoje && !isSelecionado ? t.accentBar : t.borderCard}`, borderRadius: 14, padding: '10px 8px', cursor: 'pointer', transition: 'all 0.15s' }}>
+                <p style={{ color: isSelecionado ? t.bg : t.textFaint, fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', margin: '0 0 3px', textAlign: 'center' }}>{DIAS[i]}</p>
+                <p style={{ color: isSelecionado ? t.bg : t.text, fontSize: 20, fontWeight: isHoje ? 600 : 300, margin: '0 0 8px', textAlign: 'center', lineHeight: 1 }}>{dia.getDate()}</p>
+                {ags.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    {ags.slice(0, 2).map(a => (
-                      <div key={a.id} style={{ background: isSelecionado ? 'rgba(255,255,255,0.2)' : STATUS_COLOR[a.status]?.bg || t.bg, borderRadius: 4, padding: '2px 6px' }}>
-                        <p style={{ color: isSelecionado ? t.bg : STATUS_COLOR[a.status]?.text || t.textMuted, fontSize: 10, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {a.horario.slice(0, 5)} {a.cliente_nome.split(' ')[0]}
-                        </p>
+                    {confirmados > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: isSelecionado ? 'rgba(255,255,255,0.6)' : '#22c55e' }} />
+                        <span style={{ color: isSelecionado ? 'rgba(255,255,255,0.7)' : '#15803d', fontSize: 10 }}>{confirmados}</span>
                       </div>
-                    ))}
-                    {ags.length > 2 && (
-                      <p style={{ color: isSelecionado ? t.bg : t.textFaint, fontSize: 10, margin: 0, textAlign: 'center' }}>+{ags.length - 2}</p>
+                    )}
+                    {pendentes > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: isSelecionado ? 'rgba(255,255,255,0.6)' : '#f59e0b' }} />
+                        <span style={{ color: isSelecionado ? 'rgba(255,255,255,0.7)' : '#b45309', fontSize: 10 }}>{pendentes}</span>
+                      </div>
                     )}
                   </div>
+                ) : (
+                  <p style={{ color: isSelecionado ? 'rgba(255,255,255,0.3)' : t.textFaint, fontSize: 10, margin: 0, textAlign: 'center' }}>livre</p>
                 )}
               </div>
             )
           })}
         </div>
 
-        {/* Detalhe do dia selecionado */}
-        {diaSelecionado && (
-          <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, overflow: 'hidden', marginBottom: 24 }}>
+        {/* Layout principal: linha do tempo + painel lateral */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16 }}>
+
+          {/* Linha do tempo */}
+          <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, overflow: 'hidden' }}>
             <div style={{ padding: '16px 24px', borderBottom: `0.5px solid ${t.rowBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <p style={{ color: t.text, fontSize: 14, fontWeight: 500, margin: 0 }}>
-                {new Date(diaSelecionado + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
-              </p>
-              <span style={{ color: t.textFaint, fontSize: 12 }}>{agDia(diaSelecionado).length} agendamento(s)</span>
+              <div>
+                <p style={{ color: t.text, fontSize: 14, fontWeight: 500, margin: 0 }}>
+                  {DIAS_FULL[diaSelecionadoObj.getDay()]}
+                </p>
+                <p style={{ color: t.textFaint, fontSize: 12, margin: '2px 0 0' }}>
+                  {diaSelecionadoObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {Object.entries(STATUS_CONFIG).map(([key, cfg]: any) => {
+                  const count = agHoje.filter(a => a.status === key).length
+                  if (count === 0) return null
+                  return (
+                    <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: cfg.dot }} />
+                      <span style={{ color: t.textMuted, fontSize: 11 }}>{count}</span>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
-            {agDia(diaSelecionado).length === 0 ? (
-              <div style={{ padding: '32px 24px', textAlign: 'center' }}>
-                <p style={{ color: t.textFaint, fontSize: 13 }}>Nenhum agendamento neste dia</p>
+
+            {horariosDisponiveis.length === 0 ? (
+              <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+                <p style={{ color: t.textFaint, fontSize: 13, marginBottom: 12 }}>
+                  {configDia === undefined ? 'Horarios nao configurados para este dia' : 'Salao fechado neste dia'}
+                </p>
+                <button onClick={() => router.push('/agenda/horarios')}
+                  style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 8, padding: '8px 16px', fontSize: 12, cursor: 'pointer' }}>
+                  Configurar horarios
+                </button>
               </div>
             ) : (
-              agDia(diaSelecionado).map((a, i) => (
-                <div key={a.id} style={{ padding: '14px 24px', borderBottom: i < agDia(diaSelecionado).length - 1 ? `0.5px solid ${t.rowBorder}` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ background: t.bg, borderRadius: 8, padding: '6px 10px', textAlign: 'center', minWidth: 48 }}>
-                      <p style={{ color: t.text, fontSize: 14, fontWeight: 500, margin: 0 }}>{a.horario.slice(0, 5)}</p>
+              <div style={{ padding: '12px 0' }}>
+                {horariosDisponiveis.map((hora, i) => {
+                  const ag = agHoje.find(a => a.horario.slice(0, 5) === hora)
+                  const cfg = ag ? STATUS_CONFIG[ag.status] : null
+                  return (
+                    <div key={hora} style={{ display: 'flex', gap: 0, borderBottom: i < horariosDisponiveis.length - 1 ? `0.5px solid ${t.rowBorder}` : 'none' }}>
+                      {/* Hora */}
+                      <div style={{ width: 64, padding: '14px 12px', flexShrink: 0, borderRight: `0.5px solid ${t.rowBorder}` }}>
+                        <p style={{ color: t.textFaint, fontSize: 12, margin: 0, fontWeight: 500 }}>{hora}</p>
+                      </div>
+                      {/* Conteudo */}
+                      <div style={{ flex: 1, padding: '10px 16px' }}>
+                        {ag ? (
+                          <div style={{ background: cfg.bg, borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.dot, flexShrink: 0 }} />
+                              <div>
+                                <p style={{ color: cfg.text, fontSize: 13, fontWeight: 500, margin: '0 0 2px' }}>{ag.cliente_nome}</p>
+                                <p style={{ color: cfg.text, fontSize: 11, margin: 0, opacity: 0.8 }}>
+                                  {ag.servico || 'Servico nao informado'}
+                                  {ag.cliente_whatsapp && ` · ${ag.cliente_whatsapp}`}
+                                </p>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                              <select value={ag.status} onChange={e => alterarStatus(ag.id, e.target.value)}
+                                disabled={processando === ag.id}
+                                style={{ background: 'transparent', border: 'none', color: cfg.text, fontSize: 11, cursor: 'pointer', outline: 'none' }}>
+                                <option value="pendente">Pendente</option>
+                                <option value="confirmado">Confirmado</option>
+                                <option value="concluido">Concluido</option>
+                                <option value="cancelado">Cancelado</option>
+                              </select>
+                              <button onClick={() => excluir(ag.id)} style={{ background: 'none', border: 'none', color: cfg.text, fontSize: 14, cursor: 'pointer', opacity: 0.6, lineHeight: 1 }}>✕</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button onClick={() => { setDataAg(diaSelecionado); setHorarioAg(hora); setNovoAberto(true) }}
+                            style={{ background: 'none', border: 'none', color: t.textFaint, fontSize: 12, cursor: 'pointer', padding: '4px 0', width: '100%', textAlign: 'left', opacity: 0 }}
+                            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                            onMouseLeave={e => (e.currentTarget.style.opacity = '0')}>
+                            + agendar
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <p style={{ color: t.text, fontSize: 13, margin: '0 0 2px', fontWeight: 400 }}>{a.cliente_nome}</p>
-                      <p style={{ color: t.textFaint, fontSize: 11, margin: 0 }}>
-                        {a.servico || 'Servico nao informado'}
-                        {a.cliente_whatsapp && ` · ${a.cliente_whatsapp}`}
-                      </p>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ background: STATUS_COLOR[a.status]?.bg, color: STATUS_COLOR[a.status]?.text, fontSize: 10, padding: '3px 10px', borderRadius: 20 }}>{a.status}</span>
-                    <select value={a.status} onChange={e => alterarStatus(a.id, e.target.value)}
-                      disabled={processando === a.id}
-                      style={{ background: t.bgInput, border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 8, padding: '4px 8px', fontSize: 11, cursor: 'pointer', outline: 'none' }}>
-                      <option value="pendente">Pendente</option>
-                      <option value="confirmado">Confirmado</option>
-                      <option value="concluido">Concluido</option>
-                      <option value="cancelado">Cancelado</option>
-                    </select>
-                    <button onClick={() => excluir(a.id)} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: 13, cursor: 'pointer' }}>✕</button>
-                  </div>
-                </div>
-              ))
+                  )
+                })}
+              </div>
             )}
           </div>
-        )}
+
+          {/* Painel lateral */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+            {/* Resumo do dia */}
+            <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '20px 20px' }}>
+              <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', margin: '0 0 16px' }}>Resumo do dia</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: t.textMuted, fontSize: 13 }}>Total agendados</span>
+                  <span style={{ color: t.text, fontSize: 20, fontWeight: 300 }}>{agHoje.filter(a => a.status !== 'cancelado').length}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: t.textMuted, fontSize: 13 }}>Confirmados</span>
+                  <span style={{ color: '#16a34a', fontSize: 16, fontWeight: 400 }}>{agHoje.filter(a => a.status === 'confirmado').length}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: t.textMuted, fontSize: 13 }}>Pendentes</span>
+                  <span style={{ color: '#b45309', fontSize: 16, fontWeight: 400 }}>{agHoje.filter(a => a.status === 'pendente').length}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: t.textMuted, fontSize: 13 }}>Horarios livres</span>
+                  <span style={{ color: t.textMuted, fontSize: 16, fontWeight: 400 }}>{Math.max(0, horariosDisponiveis.length - agHoje.filter(a => a.status !== 'cancelado').length)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Proximos agendamentos */}
+            <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, overflow: 'hidden', flex: 1 }}>
+              <div style={{ padding: '16px 20px', borderBottom: `0.5px solid ${t.rowBorder}` }}>
+                <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', margin: 0 }}>Agendamentos</p>
+              </div>
+              {agHoje.length === 0 ? (
+                <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+                  <p style={{ color: t.textFaint, fontSize: 12, margin: '0 0 12px' }}>Nenhum agendamento</p>
+                  <button onClick={() => { setDataAg(diaSelecionado); setNovoAberto(true) }}
+                    style={{ background: t.text, color: t.bg, border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 11, cursor: 'pointer' }}>
+                    + Adicionar
+                  </button>
+                </div>
+              ) : (
+                agHoje.map((a, i) => {
+                  const cfg = STATUS_CONFIG[a.status]
+                  return (
+                    <div key={a.id} style={{ padding: '12px 20px', borderBottom: i < agHoje.length - 1 ? `0.5px solid ${t.rowBorder}` : 'none', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.dot, marginTop: 4, flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <p style={{ color: t.text, fontSize: 12, fontWeight: 500, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>{a.cliente_nome}</p>
+                          <span style={{ color: t.textFaint, fontSize: 11, flexShrink: 0, marginLeft: 4 }}>{a.horario.slice(0, 5)}</span>
+                        </div>
+                        <p style={{ color: t.textFaint, fontSize: 11, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {a.servico || 'Servico nao informado'}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+
+          </div>
+        </div>
 
         {/* Form novo agendamento */}
         {novoAberto && (
-          <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '28px 32px', marginBottom: 20 }}>
-            <h2 style={{ color: t.text, fontSize: 16, fontWeight: 400, margin: '0 0 20px' }}>Novo agendamento</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                <div>
-                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Nome do cliente</label>
-                  <input value={nomeCliente} onChange={e => setNomeCliente(e.target.value)} placeholder="Ex: Ana Paula" style={inputStyle} />
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+            <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 20, padding: '32px', width: '100%', maxWidth: 480 }}>
+              <h2 style={{ color: t.text, fontSize: 18, fontWeight: 400, margin: '0 0 24px' }}>Novo agendamento</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Nome *</label>
+                    <input value={nomeCliente} onChange={e => setNomeCliente(e.target.value)} placeholder="Ex: Ana Paula" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>WhatsApp</label>
+                    <input value={whatsCliente} onChange={e => setWhatsCliente(e.target.value)} placeholder="5519..." style={inputStyle} />
+                  </div>
                 </div>
                 <div>
-                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>WhatsApp</label>
-                  <input value={whatsCliente} onChange={e => setWhatsCliente(e.target.value)} placeholder="5519999999999" style={inputStyle} />
+                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Servico</label>
+                  <input value={servico} onChange={e => setServico(e.target.value)} placeholder="Ex: Corte + Escova" style={inputStyle} />
                 </div>
-              </div>
-              <div>
-                <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Servico</label>
-                <input value={servico} onChange={e => setServico(e.target.value)} placeholder="Ex: Corte + Escova" style={inputStyle} />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Data *</label>
+                    <input type="date" value={dataAg} onChange={e => setDataAg(e.target.value)} style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Horario *</label>
+                    {horariosDisponiveis.length > 0 ? (
+                      <select value={horarioAg} onChange={e => setHorarioAg(e.target.value)} style={{ ...inputStyle, appearance: 'none' as const }}>
+                        <option value="">Selecione...</option>
+                        {horariosDisponiveis.map(h => {
+                          const ocupado = agHoje.some(a => a.horario.slice(0, 5) === h && a.status !== 'cancelado')
+                          return <option key={h} value={h} disabled={ocupado}>{h}{ocupado ? ' (ocupado)' : ''}</option>
+                        })}
+                      </select>
+                    ) : (
+                      <input type="time" value={horarioAg} onChange={e => setHorarioAg(e.target.value)} style={inputStyle} />
+                    )}
+                  </div>
+                </div>
                 <div>
-                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Data</label>
-                  <input type="date" value={dataAg} onChange={e => setDataAg(e.target.value)} style={inputStyle} />
-                </div>
-                <div>
-                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Horario</label>
-                  <input type="time" value={horarioAg} onChange={e => setHorarioAg(e.target.value)} style={inputStyle} />
+                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Observacao</label>
+                  <input value={obs} onChange={e => setObs(e.target.value)} placeholder="Opcional" style={inputStyle} />
                 </div>
               </div>
-              <div>
-                <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Observacao</label>
-                <input value={obs} onChange={e => setObs(e.target.value)} placeholder="Opcional" style={inputStyle} />
-              </div>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button onClick={salvarAgendamento} disabled={processando === 'novo'}
-                  style={{ background: t.text, color: t.bg, border: 'none', borderRadius: 10, padding: '11px 24px', fontSize: 12, cursor: 'pointer', opacity: processando === 'novo' ? 0.5 : 1 }}>
-                  {processando === 'novo' ? 'Salvando...' : 'Salvar'}
+              <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+                <button onClick={salvarAgendamento} disabled={processando === 'novo' || !nomeCliente || !dataAg || !horarioAg}
+                  style={{ flex: 1, background: !nomeCliente || !dataAg || !horarioAg ? t.border : t.text, color: t.bg, border: 'none', borderRadius: 10, padding: 13, fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>
+                  {processando === 'novo' ? 'Salvando...' : 'Salvar agendamento'}
                 </button>
-                <button onClick={() => setNovoAberto(false)}
-                  style={{ background: 'none', border: 'none', color: t.textMuted, fontSize: 13, cursor: 'pointer' }}>
+                <button onClick={() => { setNovoAberto(false); setHorarioAg('') }}
+                  style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 10, padding: '13px 20px', fontSize: 12, cursor: 'pointer' }}>
                   Cancelar
                 </button>
               </div>
             </div>
           </div>
         )}
+
       </div>
     </div>
   )
