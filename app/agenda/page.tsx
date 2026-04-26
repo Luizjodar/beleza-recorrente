@@ -388,7 +388,7 @@ export default function AgendaPage() {
                   <div key={i} onClick={() => setDiaSelecionado(dataStr)}
                     style={{ minHeight: 90, padding: '8px 10px', borderRight: (i + 1) % 7 !== 0 ? `0.5px solid ${t.rowBorder}` : 'none', borderBottom: i < 35 ? `0.5px solid ${t.rowBorder}` : 'none', background: isSelecionado ? t.text : 'transparent', cursor: 'pointer', transition: 'background 0.1s' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <span style={{ fontSize: isHoje ? 13 : 12, fontWeight: isHoje ? 700 : 400, color: isSelecionado ? t.bg : mesAtual ? t.text : t.textFaint, background: isHoje && !isSelecionado ? t.text : 'transparent', color: isHoje && !isSelecionado ? t.bg : isSelecionado ? t.bg : mesAtual ? t.text : t.textFaint, borderRadius: '50%', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: isHoje ? 13 : 12, fontWeight: isHoje ? 700 : 400, background: isHoje && !isSelecionado ? t.text : 'transparent', color: isSelecionado ? t.bg : isHoje && !isSelecionado ? t.bg : mesAtual ? t.text : t.textFaint, borderRadius: '50%', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {dia.getDate()}
                       </span>
                     </div>
