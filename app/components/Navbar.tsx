@@ -12,6 +12,20 @@ export default function Navbar() {
   const [nomeSalao, setNomeSalao] = useState('Meu Salao')
   const [menuAberto, setMenuAberto] = useState(false)
 
+  const nav = [
+    { label: 'Dashboard', path: '/dashboard' },
+    { label: 'Agenda', path: '/agenda' },
+    { label: 'Pacotes', path: '/pacotes' },
+    { label: 'Assinantes', path: '/assinantes' },
+    { label: 'Pagamentos', path: '/pagamentos' },
+    { label: 'Clientes', path: '/clientes' },
+    { label: 'Funcionarios', path: '/funcionarios' },
+    { label: 'Produtos', path: '/produtos' },
+    { label: 'Despesas', path: '/despesas' },
+    { label: 'Promocoes', path: '/promocoes' },
+    { label: 'Configuracoes', path: '/configuracoes' },
+  ]
+
   useEffect(() => {
     async function carregarNome() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -22,16 +36,6 @@ export default function Navbar() {
     }
     carregarNome()
   }, [])
-
-  const nav = [
-    { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Agenda', path: '/agenda' },
-    { label: 'Pacotes', path: '/pacotes' },
-    { label: 'Assinantes', path: '/assinantes' },
-    { label: 'Pagamentos', path: '/pagamentos' },
-    { label: 'Promocoes', path: '/promocoes' },
-    { label: 'Configuracoes', path: '/configuracoes' },
-  ]
 
   function navegar(path: string) {
     router.push(path)
@@ -63,7 +67,7 @@ export default function Navbar() {
         <div className="nav-desktop" style={{ alignItems: 'center', gap: 2 }}>
           {nav.map(item => (
             <button key={item.path} onClick={() => navegar(item.path)}
-              style={{ background: pathname === item.path ? t.bg : 'none', color: pathname === item.path ? t.text : t.textMuted, border: 'none', padding: '6px 12px', borderRadius: 7, fontSize: 12, cursor: 'pointer', fontWeight: pathname === item.path ? 500 : 400 }}>
+              style={{ background: pathname === item.path ? t.bg : 'none', color: pathname === item.path ? t.text : t.textMuted, border: 'none', padding: '6px 10px', borderRadius: 7, fontSize: 11, cursor: 'pointer', fontWeight: pathname === item.path ? 500 : 400 }}>
               {item.label}
             </button>
           ))}
@@ -73,7 +77,7 @@ export default function Navbar() {
             <span style={{ fontSize: 11, color: t.textMuted }}>{tema === 'claro' ? 'Escuro' : 'Claro'}</span>
           </button>
           <button onClick={() => supabase.auth.signOut().then(() => router.push('/login'))}
-            style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, padding: '6px 12px', borderRadius: 7, fontSize: 12, cursor: 'pointer', marginLeft: 4 }}>
+            style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, padding: '6px 10px', borderRadius: 7, fontSize: 11, cursor: 'pointer', marginLeft: 4 }}>
             Sair
           </button>
         </div>
@@ -91,7 +95,7 @@ export default function Navbar() {
       </div>
 
       {menuAberto && (
-        <div style={{ position: 'fixed', top: 56, left: 0, right: 0, bottom: 0, background: t.navBg, zIndex: 99, padding: 24, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ position: 'fixed', top: 56, left: 0, right: 0, bottom: 0, background: t.navBg, zIndex: 99, padding: 24, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
           {nav.map(item => (
             <button key={item.path} onClick={() => navegar(item.path)}
               style={{ background: pathname === item.path ? t.bg : 'none', color: pathname === item.path ? t.text : t.textMuted, border: `0.5px solid ${pathname === item.path ? t.border : 'transparent'}`, padding: '14px 16px', borderRadius: 12, fontSize: 14, cursor: 'pointer', textAlign: 'left', fontWeight: pathname === item.path ? 500 : 400 }}>
@@ -109,16 +113,3 @@ export default function Navbar() {
     </>
   )
 }
-const nav = [
-  { label: 'Dashboard', path: '/dashboard' },
-  { label: 'Agenda', path: '/agenda' },
-  { label: 'Pacotes', path: '/pacotes' },
-  { label: 'Assinantes', path: '/assinantes' },
-  { label: 'Pagamentos', path: '/pagamentos' },
-  { label: 'Clientes', path: '/clientes' },
-  { label: 'Funcionarios', path: '/funcionarios' },
-  { label: 'Produtos', path: '/produtos' },
-  { label: 'Despesas', path: '/despesas' },
-  { label: 'Promocoes', path: '/promocoes' },
-  { label: 'Configuracoes', path: '/configuracoes' },
-]
