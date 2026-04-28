@@ -108,7 +108,7 @@ export default function ClientesAnalise() {
 
         {/* Lista de clientes */}
         <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 100px 100px 80px', padding: '10px 20px', borderBottom: `0.5px solid ${t.rowBorder}' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 100px 100px 80px', padding: '10px 20px', borderBottom: `0.5px solid ${t.rowBorder}` }}>
             {['Cliente', 'Plano', 'Desde', 'Ultima visita', 'Status'].map(h => (
               <p key={h} style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', margin: 0 }}>{h}</p>
             ))}
