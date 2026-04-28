@@ -109,3 +109,16 @@ export default function Navbar() {
     </>
   )
 }
+const nav = [
+  { label: 'Dashboard', path: '/dashboard' },
+  { label: 'Agenda', path: '/agenda' },
+  { label: 'Pacotes', path: '/pacotes' },
+  { label: 'Assinantes', path: '/assinantes' },
+  { label: 'Pagamentos', path: '/pagamentos' },
+  { label: 'Clientes', path: '/clientes' },
+  { label: 'Funcionarios', path: '/funcionarios' },
+  { label: 'Produtos', path: '/produtos' },
+  { label: 'Despesas', path: '/despesas' },
+  { label: 'Promocoes', path: '/promocoes' },
+  { label: 'Configuracoes', path: '/configuracoes' },
+]
