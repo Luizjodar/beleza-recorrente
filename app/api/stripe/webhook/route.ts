@@ -56,6 +56,28 @@ async function registrarPagamento(session: Stripe.Checkout.Session) {
     p_assinante_id: assinanteId,
     p_mes: mesReferencia,
   })
+
+  // Criar agendamento se data e horário foram informados
+  const dataAgendamento = session.metadata?.data_agendamento
+  const horarioAgendamento = session.metadata?.horario_agendamento
+  if (dataAgendamento && horarioAgendamento) {
+    const { data: assinante } = await supabase
+      .from('assinantes')
+      .select('nome, whatsapp')
+      .eq('id', assinanteId)
+      .single()
+
+    await supabase.from('agendamentos').insert({
+      salao_id: salaoId,
+      assinante_id: assinanteId,
+      cliente_nome: assinante?.nome || session.metadata?.nome_cliente || '',
+      whatsapp: assinante?.whatsapp || session.metadata?.whatsapp_cliente || '',
+      data: dataAgendamento,
+      horario: horarioAgendamento,
+      status: 'confirmado',
+      origem: 'online',
+    })
+  }
 }
 
 export async function POST(req: Request) {

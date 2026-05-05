@@ -12,6 +12,8 @@ type CheckoutBody = {
   whatsapp?: string
   email?: string
   horario?: string
+  dataSelecionada?: string
+  horarioSelecionado?: string
 }
 
 function getBaseUrl(req: Request) {
@@ -124,6 +126,10 @@ export async function POST(req: Request) {
         assinante_id: assinante.id,
         salao_id: salaoId,
         mes_referencia: mesReferenciaAtual(),
+        data_agendamento: body.dataSelecionada || '',
+        horario_agendamento: body.horarioSelecionado || '',
+        nome_cliente: nome,
+        whatsapp_cliente: whatsapp,
       },
       payment_intent_data: {
         metadata: {
@@ -131,6 +137,8 @@ export async function POST(req: Request) {
           assinante_id: assinante.id,
           salao_id: salaoId,
           mes_referencia: mesReferenciaAtual(),
+          data_agendamento: body.dataSelecionada || '',
+          horario_agendamento: body.horarioSelecionado || '',
         },
       },
     })
