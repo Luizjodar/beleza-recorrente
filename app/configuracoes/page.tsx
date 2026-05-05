@@ -22,6 +22,7 @@ export default function ConfiguracoesPage() {
   const [cidade, setCidade] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [emailContato, setEmailContato] = useState('')
+  const [taxaReserva, setTaxaReserva] = useState('')
 
   useEffect(() => {
     async function init() {
@@ -33,6 +34,7 @@ export default function ConfiguracoesPage() {
       setNome(salao.nome || ''); setSlug(salao.slug || ''); setSlugOriginal(salao.slug || '')
       setCargo(salao.cargo || ''); setDescricao(salao.descricao || '')
       setCidade(salao.cidade || ''); setWhatsapp(salao.whatsapp || ''); setEmailContato(salao.email_contato || '')
+      setTaxaReserva(salao.taxa_reserva?.toString() || '')
       setLoading(false)
     }
     init()
@@ -55,7 +57,7 @@ export default function ConfiguracoesPage() {
       if (existente) { setErro('Este link ja esta em uso. Escolha outro.'); return }
     }
     setSalvando(true); setErro('')
-    const { error } = await supabase.from('saloes').update({ nome, slug, cargo, descricao, cidade, whatsapp, email_contato: emailContato }).eq('id', salaoId)
+    const { error } = await supabase.from('saloes').update({ nome, slug, cargo, descricao, cidade, whatsapp, email_contato: emailContato, taxa_reserva: taxaReserva ? parseFloat(taxaReserva) : null }).eq('id', salaoId)
     if (error) { setErro('Erro ao salvar. Tente novamente.') }
     else { setSlugOriginal(slug); setSucesso(true); setTimeout(() => setSucesso(false), 3000) }
     setSalvando(false)
@@ -119,6 +121,26 @@ export default function ConfiguracoesPage() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Pagamento */}
+        <div style={sectionStyle}>
+          <div style={{ padding: '20px 24px', borderBottom: `0.5px solid ${t.rowBorder}` }}>
+            <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', margin: 0 }}>Pagamento online</p>
+          </div>
+          <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <label style={labelStyle}>Taxa de reserva (R$)</label>
+              <div style={{ display: 'flex', alignItems: 'center', border: `0.5px solid ${t.border}`, borderRadius: 10, overflow: 'hidden' }}>
+                <span style={{ background: t.bg, padding: '11px 14px', fontSize: 13, color: t.textMuted, borderRight: `0.5px solid ${t.border}` }}>R$</span>
+                <input value={taxaReserva} onChange={e => setTaxaReserva(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="50"
+                  style={{ flex: 1, border: 'none', padding: '11px 14px', background: t.bgInput, fontSize: 13, color: t.text, outline: 'none' }} />
+              </div>
+              <p style={{ color: t.textFaint, fontSize: 11, marginTop: 8 }}>
+                Valor cobrado antecipadamente para garantir o horario. Descontado no dia do servico. Deixe vazio para cobrar o valor cheio do plano.
+              </p>
+            </div>
           </div>
         </div>
 

@@ -67,6 +67,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Pacote nao encontrado' }, { status: 404 })
     }
 
+    const { data: salaoData } = await supabase
+      .from('saloes')
+      .select('taxa_reserva')
+      .eq('id', salaoId)
+      .single()
+
+    const valorCheio = Number(pacote.preco_mensal || 0)
+    const taxaReserva = salaoData?.taxa_reserva ? Number(salaoData.taxa_reserva) : null
+    const valorCobrado = taxaReserva ?? valorCheio
+    const descricaoCobranca = taxaReserva
+      ? `Taxa de reserva (R$ ${taxaReserva.toFixed(0)} descontado no dia) — Plano: ${pacote.nome}`
+      : `Plano: ${pacote.nome}`
+
     const { data: assinante, error: assinanteError } = await supabase
       .from('assinantes')
       .insert({
@@ -85,7 +98,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Nao foi possivel criar a assinatura' }, { status: 500 })
     }
 
-    const valor = Number(pacote.preco_mensal || 0)
+    const valor = valorCobrado
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       locale: 'pt-BR',
@@ -100,8 +113,8 @@ export async function POST(req: Request) {
             currency: 'brl',
             unit_amount: Math.round(valor * 100),
             product_data: {
-              name: pacote.nome || 'Plano mensal',
-              description: `Assinante: ${nome}`,
+              name: taxaReserva ? `Taxa de Reserva — ${pacote.nome}` : (pacote.nome || 'Plano mensal'),
+              description: descricaoCobranca,
             },
           },
         },

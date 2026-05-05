@@ -13,6 +13,7 @@ type Salao = {
   whatsapp?: string | null
   email_contato?: string | null
   pagamento_online?: boolean | null
+  taxa_reserva?: number | null
 }
 
 type PacoteItem = {
@@ -643,9 +644,24 @@ export default function PaginaPublica() {
               </div>
 
               {erro && <p style={{ color: '#be123c', fontSize: 12, margin: 0 }}>{erro}</p>}
+
+              {salao.taxa_reserva && (
+                <div style={{ background: '#f0fdf4', border: '0.5px solid #bbf7d0', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <span style={{ fontSize: 14 }}>🔒</span>
+                  <div>
+                    <p style={{ color: '#15803d', fontSize: 12, fontWeight: 500, margin: '0 0 2px' }}>
+                      Taxa de reserva: R$ {salao.taxa_reserva.toFixed(0)}
+                    </p>
+                    <p style={{ color: '#16a34a', fontSize: 11, margin: 0 }}>
+                      Cobrada agora para garantir seu horário. Descontada no dia do serviço.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <button onClick={pagarPlanoOnline} disabled={enviando || !nome || !whatsapp || !dataSelecionadaPlano || !horarioSelecionadoPlano}
                 style={{ width: '100%', background: enviando || !nome || !whatsapp || !dataSelecionadaPlano || !horarioSelecionadoPlano ? '#f0f0f0' : '#111', color: enviando || !nome || !whatsapp || !dataSelecionadaPlano || !horarioSelecionadoPlano ? '#bbb' : 'white', border: 'none', borderRadius: 8, padding: '14px 0', fontSize: 12, letterSpacing: 2, cursor: 'pointer', marginTop: 8, fontWeight: 500 }}>
-                {enviando ? 'AGUARDE...' : 'AGENDAR ONLINE'}
+                {enviando ? 'AGUARDE...' : salao.taxa_reserva ? `RESERVAR — R$ ${salao.taxa_reserva.toFixed(0)}` : 'AGENDAR ONLINE'}
               </button>
               <button onClick={assinarPessoalmente} disabled={!nome || !whatsapp || !dataSelecionadaPlano || !horarioSelecionadoPlano}
                 style={{ width: '100%', background: !nome || !whatsapp || !dataSelecionadaPlano || !horarioSelecionadoPlano ? '#f0f0f0' : '#25D366', color: !nome || !whatsapp || !dataSelecionadaPlano || !horarioSelecionadoPlano ? '#bbb' : 'white', border: 'none', borderRadius: 8, padding: '14px 0', fontSize: 12, letterSpacing: 2, cursor: 'pointer', fontWeight: 500 }}>
