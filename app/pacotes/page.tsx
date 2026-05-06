@@ -8,7 +8,7 @@ import Layout from '../components/Layout'
 
 type Item = { id?: string; servico_nome: string; quantidade: number }
 type PacoteItem = { id: string; servico_nome: string; quantidade: number }
-type Pacote = { id: string; nome: string; descricao?: string; preco_mensal: number; pacote_itens: PacoteItem[] }
+type Pacote = { id: string; nome: string; descricao?: string; preco_mensal: number; imagem_url?: string; pacote_itens: PacoteItem[] }
 
 export default function PacotesPage() {
   const router = useRouter()
@@ -22,6 +22,9 @@ export default function PacotesPage() {
   const [descricao, setDescricao] = useState('')
   const [preco, setPreco] = useState('')
   const [itens, setItens] = useState<Item[]>([{ servico_nome: '', quantidade: 1 }])
+  const [imagemFile, setImagemFile] = useState<File | null>(null)
+  const [imagemPreview, setImagemPreview] = useState<string>('')
+  const [uploadando, setUploadando] = useState(false)
 
   const carregarPacotes = useCallback(async (id: string) => {
     const { data } = await supabase.from('pacotes')
@@ -59,32 +62,59 @@ export default function PacotesPage() {
     setEditando(p); setNome(p.nome); setDescricao(p.descricao || '')
     setPreco(p.preco_mensal.toString())
     setItens(p.pacote_itens.map((i) => ({ id: i.id, servico_nome: i.servico_nome, quantidade: i.quantidade })))
+    setImagemPreview(p.imagem_url || '')
+    setImagemFile(null)
     setCriando(false)
   }
 
   function abrirCriacao() {
     setEditando(null); setNome(''); setDescricao(''); setPreco('')
-    setItens([{ servico_nome: '', quantidade: 1 }]); setCriando(true)
+    setItens([{ servico_nome: '', quantidade: 1 }])
+    setImagemFile(null); setImagemPreview('')
+    setCriando(true)
   }
 
   function cancelar() {
     setCriando(false); setEditando(null); setNome(''); setDescricao(''); setPreco('')
     setItens([{ servico_nome: '', quantidade: 1 }])
+    setImagemFile(null); setImagemPreview('')
+  }
+
+  function handleImagem(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImagemFile(file)
+    setImagemPreview(URL.createObjectURL(file))
   }
 
   async function salvarPacote() {
     if (!nome || !preco || !salaoId) return
     const itensFiltrados = itens.filter(i => i.servico_nome.trim())
     if (itensFiltrados.length === 0) return
+    setUploadando(true)
+
+    let imagem_url = editando?.imagem_url || null
+
+    // Upload da imagem se houver nova
+    if (imagemFile && salaoId) {
+      const ext = imagemFile.name.split('.').pop()
+      const path = `pacotes/${salaoId}/${Date.now()}.${ext}`
+      const { error: uploadErr } = await supabase.storage.from('artes').upload(path, imagemFile, { upsert: true })
+      if (!uploadErr) {
+        const { data: urlData } = supabase.storage.from('artes').getPublicUrl(path)
+        imagem_url = urlData.publicUrl
+      }
+    }
+
     if (editando) {
-      await supabase.from('pacotes').update({ nome, descricao, preco_mensal: parseFloat(preco) }).eq('id', editando.id)
+      await supabase.from('pacotes').update({ nome, descricao, preco_mensal: parseFloat(preco), imagem_url }).eq('id', editando.id)
       await supabase.from('pacote_itens').delete().eq('pacote_id', editando.id)
       await supabase.from('pacote_itens').insert(
         itensFiltrados.map((item, i) => ({ pacote_id: editando.id, servico_nome: item.servico_nome, quantidade: item.quantidade, ordem: i }))
       )
     } else {
       const { data: pacote } = await supabase.from('pacotes').insert({
-        salao_id: salaoId, nome, descricao, preco_mensal: parseFloat(preco),
+        salao_id: salaoId, nome, descricao, preco_mensal: parseFloat(preco), imagem_url,
       }).select().single()
       if (pacote) {
         await supabase.from('pacote_itens').insert(
@@ -93,6 +123,7 @@ export default function PacotesPage() {
       }
     }
     await carregarPacotes(salaoId)
+    setUploadando(false)
     cancelar()
   }
 
@@ -174,10 +205,30 @@ export default function PacotesPage() {
                   + Adicionar servico
                 </button>
               </div>
+              <div>
+                <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Arte / Imagem (opcional)</label>
+                <div style={{ border: `0.5px dashed ${t.border}`, borderRadius: 12, overflow: 'hidden', cursor: 'pointer', position: 'relative' }}
+                  onClick={() => document.getElementById('upload-pacote')?.click()}>
+                  {imagemPreview ? (
+                    <img src={imagemPreview} alt="Arte" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', display: 'block' }} />
+                  ) : (
+                    <div style={{ padding: '24px', textAlign: 'center' }}>
+                      <p style={{ color: t.textFaint, fontSize: 12, margin: 0 }}>Clique para fazer upload da arte do pacote</p>
+                      <p style={{ color: t.textFaint, fontSize: 11, margin: '4px 0 0' }}>JPG, PNG ou WEBP · Recomendado 9:16 (stories)</p>
+                    </div>
+                  )}
+                  {imagemPreview && (
+                    <div style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: 11, padding: '4px 10px', borderRadius: 6 }}>
+                      Trocar imagem
+                    </div>
+                  )}
+                </div>
+                <input id="upload-pacote" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImagem} />
+              </div>
               <div style={{ display: 'flex', gap: 12, paddingTop: 4 }}>
-                <button onClick={salvarPacote}
-                  style={{ background: t.text, color: t.navBg, border: 'none', borderRadius: 10, padding: '11px 24px', fontSize: 12, cursor: 'pointer' }}>
-                  {editando ? 'Salvar alteracoes' : 'Criar pacote'}
+                <button onClick={salvarPacote} disabled={uploadando}
+                  style={{ background: t.text, color: t.navBg, border: 'none', borderRadius: 10, padding: '11px 24px', fontSize: 12, cursor: 'pointer', opacity: uploadando ? 0.6 : 1 }}>
+                  {uploadando ? 'Salvando...' : editando ? 'Salvar alteracoes' : 'Criar pacote'}
                 </button>
                 <button onClick={cancelar}
                   style={{ background: 'none', border: 'none', color: t.textMuted, fontSize: 13, cursor: 'pointer' }}>
@@ -195,8 +246,12 @@ export default function PacotesPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {pacotes.map(p => (
-              <div key={p.id} style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '22px 28px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div key={p.id} style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, overflow: 'hidden' }}>
+                {p.imagem_url && (
+                  <img src={p.imagem_url} alt={p.nome} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
+                )}
+                <div style={{ padding: '22px 28px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                   <div>
                     <h3 style={{ color: t.text, fontSize: 15, fontWeight: 500, margin: '0 0 3px' }}>{p.nome}</h3>
                     {p.descricao && <p style={{ color: t.textFaint, fontSize: 12, margin: 0 }}>{p.descricao}</p>}
@@ -221,6 +276,7 @@ export default function PacotesPage() {
                       {item.quantidade}x {item.servico_nome}
                     </span>
                   ))}
+                </div>
                 </div>
               </div>
             ))}

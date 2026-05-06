@@ -26,6 +26,7 @@ type Pacote = {
   id: string
   nome: string
   preco_mensal: string | number
+  imagem_url?: string | null
   pacote_itens?: PacoteItem[]
 }
 
@@ -36,6 +37,7 @@ type Promocao = {
   preco_original?: string | number | null
   preco_promo: string | number
   data_fim: string
+  imagem_url?: string | null
 }
 
 const inputStyle = {
@@ -489,9 +491,13 @@ export default function PaginaPublica() {
             <p style={{ color: '#aaa', fontSize: 10, letterSpacing: 4, textTransform: 'uppercase', marginBottom: 12 }}>Promocoes especiais</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {promocoes.map(p => (
-                <div key={p.id} style={{ background: 'white', border: '1px solid #e8e8e8', borderRadius: 12, padding: 20, position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', background: '#111' }} />
-                  <div style={{ paddingLeft: 12 }}>
+                <div key={p.id} style={{ background: 'white', border: '1px solid #e8e8e8', borderRadius: 16, overflow: 'hidden', position: 'relative' }}>
+                  {p.imagem_url && (
+                    <img src={p.imagem_url} alt={p.titulo} style={{ width: '100%', maxHeight: 320, objectFit: 'cover', display: 'block' }} />
+                  )}
+                  <div style={{ padding: 20, position: 'relative' }}>
+                  {!p.imagem_url && <div style={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', background: '#111' }} />}
+                  <div style={{ paddingLeft: p.imagem_url ? 0 : 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
                         <p style={{ color: '#aaa', fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 4 }}>
@@ -507,6 +513,7 @@ export default function PaginaPublica() {
                     </div>
                     <AgendamentoPromo promo={p} salao={salao} slug={slug || ''} />
                   </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -518,9 +525,13 @@ export default function PaginaPublica() {
             {pacotes.map((p, idx) => (
               <div key={p.id}
                 onClick={() => setPacoteSelecionado(p)}
-                style={{ background: 'white', border: '1px solid #e8e8e8', borderRadius: 12, padding: 24, cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s' }}
+                style={{ background: 'white', border: '1px solid #e8e8e8', borderRadius: 16, cursor: 'pointer', overflow: 'hidden', transition: 'border-color 0.2s, box-shadow 0.2s' }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = '#bbb'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.06)' }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = '#e8e8e8'; e.currentTarget.style.boxShadow = 'none' }}>
+                {p.imagem_url && (
+                  <img src={p.imagem_url} alt={p.nome} style={{ width: '100%', maxHeight: 320, objectFit: 'cover', display: 'block' }} />
+                )}
+                <div style={{ padding: 24 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                   <div>
                     <p style={{ color: '#bbb', fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 6 }}>
@@ -543,6 +554,7 @@ export default function PaginaPublica() {
                 <button style={{ width: '100%', background: '#111', color: 'white', border: 'none', borderRadius: 8, padding: '13px 0', fontSize: 12, letterSpacing: 2, cursor: 'pointer', fontWeight: 500 }}>
                   ASSINAR
                 </button>
+                </div>
               </div>
             ))}
           </div>

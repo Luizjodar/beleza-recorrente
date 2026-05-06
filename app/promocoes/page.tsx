@@ -14,6 +14,7 @@ type Promocao = {
   preco_promo?: number
   data_fim?: string
   ativo: boolean
+  imagem_url?: string
 }
 
 export default function PromocoesPage() {
@@ -29,6 +30,9 @@ export default function PromocoesPage() {
   const [precoOriginal, setPrecoOriginal] = useState('')
   const [precoPromo, setPrecoPromo] = useState('')
   const [dataFim, setDataFim] = useState('')
+  const [imagemFile, setImagemFile] = useState<File | null>(null)
+  const [imagemPreview, setImagemPreview] = useState<string>('')
+  const [uploadando, setUploadando] = useState(false)
 
   const carregar = useCallback(async (id: string) => {
     const { data } = await supabase.from('promocoes').select('*').eq('salao_id', id).order('criado_em', { ascending: false })
@@ -51,20 +55,44 @@ export default function PromocoesPage() {
   function cancelar() {
     setCriando(false); setEditando(null)
     setTitulo(''); setDescricao(''); setPrecoOriginal(''); setPrecoPromo(''); setDataFim('')
+    setImagemFile(null); setImagemPreview('')
   }
 
   function abrirEdicao(p: Promocao) {
     setEditando(p); setTitulo(p.titulo); setDescricao(p.descricao || '')
     setPrecoOriginal(p.preco_original?.toString() || '')
     setPrecoPromo(p.preco_promo?.toString() ?? ''); setDataFim(p.data_fim ?? ''); setCriando(false)
+    setImagemPreview(p.imagem_url || ''); setImagemFile(null)
+  }
+
+  function handleImagem(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImagemFile(file)
+    setImagemPreview(URL.createObjectURL(file))
   }
 
   async function salvar() {
     if (!titulo || !precoPromo || !dataFim || !salaoId) return
-    const payload = { salao_id: salaoId, titulo, descricao, preco_original: precoOriginal ? parseFloat(precoOriginal) : null, preco_promo: parseFloat(precoPromo), data_fim: dataFim }
+    setUploadando(true)
+
+    let imagem_url = editando?.imagem_url || null
+
+    if (imagemFile) {
+      const ext = imagemFile.name.split('.').pop()
+      const path = `promocoes/${salaoId}/${Date.now()}.${ext}`
+      const { error: uploadErr } = await supabase.storage.from('artes').upload(path, imagemFile, { upsert: true })
+      if (!uploadErr) {
+        const { data: urlData } = supabase.storage.from('artes').getPublicUrl(path)
+        imagem_url = urlData.publicUrl
+      }
+    }
+
+    const payload = { salao_id: salaoId, titulo, descricao, preco_original: precoOriginal ? parseFloat(precoOriginal) : null, preco_promo: parseFloat(precoPromo), data_fim: dataFim, imagem_url }
     if (editando) await supabase.from('promocoes').update(payload).eq('id', editando.id)
     else await supabase.from('promocoes').insert(payload)
     await carregar(salaoId)
+    setUploadando(false)
     cancelar()
   }
 
@@ -138,10 +166,30 @@ export default function PromocoesPage() {
                   <input value={dataFim} onChange={e => setDataFim(e.target.value)} type="date" min={hoje} style={inputStyle} />
                 </div>
               </div>
+              <div>
+                <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Arte / Imagem (opcional)</label>
+                <div style={{ border: `0.5px dashed ${t.border}`, borderRadius: 12, overflow: 'hidden', cursor: 'pointer', position: 'relative' }}
+                  onClick={() => document.getElementById('upload-promo')?.click()}>
+                  {imagemPreview ? (
+                    <img src={imagemPreview} alt="Arte" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', display: 'block' }} />
+                  ) : (
+                    <div style={{ padding: '24px', textAlign: 'center' }}>
+                      <p style={{ color: t.textFaint, fontSize: 12, margin: 0 }}>Clique para fazer upload da arte da promoção</p>
+                      <p style={{ color: t.textFaint, fontSize: 11, margin: '4px 0 0' }}>JPG, PNG ou WEBP · Recomendado 9:16 (stories)</p>
+                    </div>
+                  )}
+                  {imagemPreview && (
+                    <div style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: 11, padding: '4px 10px', borderRadius: 6 }}>
+                      Trocar imagem
+                    </div>
+                  )}
+                </div>
+                <input id="upload-promo" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImagem} />
+              </div>
               <div style={{ display: 'flex', gap: 12, paddingTop: 4 }}>
-                <button onClick={salvar}
-                  style={{ background: t.text, color: t.navBg, border: 'none', borderRadius: 10, padding: '11px 24px', fontSize: 12, cursor: 'pointer' }}>
-                  {editando ? 'Salvar alteracoes' : 'Criar promocao'}
+                <button onClick={salvar} disabled={uploadando}
+                  style={{ background: t.text, color: t.navBg, border: 'none', borderRadius: 10, padding: '11px 24px', fontSize: 12, cursor: 'pointer', opacity: uploadando ? 0.6 : 1 }}>
+                  {uploadando ? 'Salvando...' : editando ? 'Salvar alteracoes' : 'Criar promocao'}
                 </button>
                 <button onClick={cancelar} style={{ background: 'none', border: 'none', color: t.textMuted, fontSize: 13, cursor: 'pointer' }}>Cancelar</button>
               </div>
@@ -154,9 +202,13 @@ export default function PromocoesPage() {
             <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 12 }}>Ativas agora</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {ativas.map(p => (
-                <div key={p.id} style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '20px 24px', position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', top: 0, left: 0, width: 3, height: '100%', background: t.accentBar }} />
-                  <div style={{ paddingLeft: 12, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                <div key={p.id} style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, overflow: 'hidden', position: 'relative' }}>
+                  {p.imagem_url && (
+                    <img src={p.imagem_url} alt={p.titulo} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
+                  )}
+                  <div style={{ padding: '20px 24px', position: 'relative' }}>
+                  {!p.imagem_url && <div style={{ position: 'absolute', top: 0, left: 0, width: 3, height: '100%', background: t.accentBar }} />}
+                  <div style={{ paddingLeft: p.imagem_url ? 0 : 12, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                         <span style={{ background: t.badgeAtivo, color: t.badgeAtivoText, fontSize: 10, padding: '2px 8px', borderRadius: 20 }}>Ativa</span>
@@ -179,6 +231,7 @@ export default function PromocoesPage() {
                       <button onClick={() => abrirEdicao(p)} style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 8, padding: '5px 12px', fontSize: 11, cursor: 'pointer' }}>Editar</button>
                       <button onClick={() => excluir(p.id)} style={{ background: 'none', border: `0.5px solid ${t.border}`, color: '#ef4444', borderRadius: 8, padding: '5px 12px', fontSize: 11, cursor: 'pointer' }}>Excluir</button>
                     </div>
+                  </div>
                   </div>
                 </div>
               ))}
