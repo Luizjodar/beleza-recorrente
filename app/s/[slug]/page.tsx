@@ -61,7 +61,8 @@ const labelStyle = {
 }
 
 function dinheiro(valor: string | number | null | undefined) {
-  return Number(valor || 0).toFixed(0)
+  const num = Number(valor || 0)
+  return num % 1 === 0 ? num.toFixed(0) : num.toFixed(2).replace('.', ',')
 }
 
 function AgendamentoPromo({ promo, salao, slug }: { promo: Promocao; salao: Salao; slug: string }) {
@@ -509,6 +510,11 @@ export default function PaginaPublica() {
                       <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 16 }}>
                         {p.preco_original && <p style={{ color: '#ccc', fontSize: 12, textDecoration: 'line-through', margin: '0 0 2px' }}>R$ {dinheiro(p.preco_original)}</p>}
                         <p style={{ color: '#111', fontSize: 20, fontWeight: 300, margin: 0 }}>R$ {dinheiro(p.preco_promo)}</p>
+                        {p.preco_original && Number(p.preco_original) > 0 && (
+                          <span style={{ background: '#111', color: 'white', fontSize: 10, padding: '2px 8px', borderRadius: 20, display: 'inline-block', marginTop: 4 }}>
+                            -{Math.round((1 - Number(p.preco_promo) / Number(p.preco_original)) * 100)}% OFF
+                          </span>
+                        )}
                       </div>
                     </div>
                     <AgendamentoPromo promo={p} salao={salao} slug={slug || ''} />
