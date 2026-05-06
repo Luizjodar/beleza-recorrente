@@ -493,7 +493,7 @@ export default function PaginaPublica() {
               {promocoes.map(p => (
                 <div key={p.id} style={{ background: 'white', border: '1px solid #e8e8e8', borderRadius: 16, overflow: 'hidden', position: 'relative' }}>
                   {p.imagem_url && (
-                    <img src={p.imagem_url} alt={p.titulo} style={{ width: '100%', maxHeight: 320, objectFit: 'cover', display: 'block' }} />
+                    <img src={p.imagem_url} alt={p.titulo} style={{ width: '100%', display: 'block', borderRadius: '16px 16px 0 0' }} />
                   )}
                   <div style={{ padding: 20, position: 'relative' }}>
                   {!p.imagem_url && <div style={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', background: '#111' }} />}
@@ -529,7 +529,7 @@ export default function PaginaPublica() {
                 onMouseEnter={e => { e.currentTarget.style.borderColor = '#bbb'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.06)' }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = '#e8e8e8'; e.currentTarget.style.boxShadow = 'none' }}>
                 {p.imagem_url && (
-                  <img src={p.imagem_url} alt={p.nome} style={{ width: '100%', maxHeight: 320, objectFit: 'cover', display: 'block' }} />
+                  <img src={p.imagem_url} alt={p.nome} style={{ width: '100%', display: 'block', borderRadius: '16px 16px 0 0' }} />
                 )}
                 <div style={{ padding: 24 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
