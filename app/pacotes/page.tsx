@@ -5,6 +5,7 @@ import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useTema } from '@/app/lib/tema'
 import Layout from '../components/Layout'
+import ImageEditor from '../components/ImageEditor'
 
 type Item = { id?: string; servico_nome: string; quantidade: number }
 type PacoteItem = { id: string; servico_nome: string; quantidade: number }
@@ -25,6 +26,7 @@ export default function PacotesPage() {
   const [imagemFile, setImagemFile] = useState<File | null>(null)
   const [imagemPreview, setImagemPreview] = useState<string>('')
   const [uploadando, setUploadando] = useState(false)
+  const [editandoImagem, setEditandoImagem] = useState<string>('')
 
   const carregarPacotes = useCallback(async (id: string) => {
     const { data } = await supabase.from('pacotes')
@@ -83,8 +85,14 @@ export default function PacotesPage() {
   function handleImagem(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setImagemFile(file)
-    setImagemPreview(URL.createObjectURL(file))
+    const url = URL.createObjectURL(file)
+    setEditandoImagem(url)
+  }
+
+  function confirmarCrop(blob: Blob, url: string) {
+    setImagemFile(new File([blob], 'arte.jpg', { type: 'image/jpeg' }))
+    setImagemPreview(url)
+    setEditandoImagem('')
   }
 
   async function salvarPacote() {
@@ -149,6 +157,13 @@ export default function PacotesPage() {
 
   return (
     <Layout>
+    {editandoImagem && (
+      <ImageEditor
+        imageSrc={editandoImagem}
+        onConfirm={confirmarCrop}
+        onCancel={() => setEditandoImagem('')}
+      />
+    )}
     <div style={{ fontFamily: "system-ui, sans-serif" }}>
 <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 24px' }}>
 
