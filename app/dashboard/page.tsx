@@ -135,10 +135,32 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div style={{ maxWidth: 1060, margin: '0 auto', padding: '36px 24px' }}>
+      <style>{`
+        .dash-pad { max-width: 1060px; margin: 0 auto; padding: 36px 24px; }
+        .dash-header { margin-bottom: 28px; display: flex; align-items: flex-end; justify-content: space-between; }
+        .dash-kpi2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .dash-kpi3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .dash-mid { display: grid; grid-template-columns: 1fr 320px; gap: 16px; margin-bottom: 16px; }
+        .dash-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .kpi-value-lg { font-size: 44px; }
+        .kpi-value-md { font-size: 36px; }
+        @media (max-width: 768px) {
+          .dash-pad { padding: 20px 16px; }
+          .dash-header { flex-direction: column; align-items: flex-start; gap: 4px; }
+          .dash-kpi2 { grid-template-columns: 1fr 1fr; gap: 10px; }
+          .dash-kpi3 { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+          .dash-mid { grid-template-columns: 1fr; }
+          .dash-bottom { grid-template-columns: 1fr; }
+          .kpi-value-lg { font-size: 28px; }
+          .kpi-value-md { font-size: 24px; }
+          .kpi-card-pad { padding: 16px 14px !important; }
+          .kpi-label { font-size: 9px !important; }
+        }
+      `}</style>
+      <div className="dash-pad">
 
         {/* Header */}
-        <div style={{ marginBottom: 28, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+        <div className="dash-header">
           <div>
             <p style={{ color: t.textMuted, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', margin: '0 0 6px' }}>Bem-vindo de volta</p>
             <h1 style={{ color: t.text, fontSize: 30, fontWeight: 300, margin: 0, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>Faturamento</h1>
@@ -148,84 +170,78 @@ export default function Dashboard() {
 
         {/* ESTADO VAZIO — guia de setup */}
         {!setupCompleto && (
-          <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '32px', marginBottom: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '24px', marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
               <div>
-                <h2 style={{ color: t.text, fontSize: 18, fontWeight: 400, margin: '0 0 6px', fontFamily: 'Georgia, serif' }}>
-                  Configure seu salao em 4 passos
+                <h2 style={{ color: t.text, fontSize: 16, fontWeight: 400, margin: '0 0 4px', fontFamily: 'Georgia, serif' }}>
+                  Configure seu salao
                 </h2>
-                <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>
-                  Complete o setup para comecar a receber assinantes
-                </p>
+                <p style={{ color: t.textMuted, fontSize: 12, margin: 0 }}>Complete o setup para comecar</p>
               </div>
-              <div style={{ textAlign: 'center', flexShrink: 0, marginLeft: 24 }}>
-                <p style={{ color: t.text, fontSize: 28, fontWeight: 300, margin: 0, lineHeight: 1 }}>{passosFeitos}/4</p>
-                <p style={{ color: t.textFaint, fontSize: 11, margin: '4px 0 0' }}>concluidos</p>
+              <div style={{ textAlign: 'center', flexShrink: 0, marginLeft: 16 }}>
+                <p style={{ color: t.text, fontSize: 24, fontWeight: 300, margin: 0, lineHeight: 1 }}>{passosFeitos}/4</p>
+                <p style={{ color: t.textFaint, fontSize: 10, margin: '4px 0 0' }}>feitos</p>
               </div>
             </div>
-
-            {/* Barra de progresso */}
-            <div style={{ background: t.bg, borderRadius: 4, height: 4, marginBottom: 24, overflow: 'hidden' }}>
+            <div style={{ background: t.bg, borderRadius: 4, height: 4, marginBottom: 20, overflow: 'hidden' }}>
               <div style={{ background: t.text, height: '100%', width: `${(passosFeitos / 4) * 100}%`, borderRadius: 4, transition: 'width 0.3s' }} />
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {passos.map((passo, i) => (
                 <div key={passo.key} onClick={() => !passo.done && router.push(passo.path)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: passo.done ? t.bg : t.bgCard, border: `0.5px solid ${passo.done ? t.border : t.borderCard}`, borderRadius: 12, cursor: passo.done ? 'default' : 'pointer', opacity: passo.done ? 0.6 : 1, transition: 'all 0.15s' }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: passo.done ? t.text : t.bg, border: `0.5px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: passo.done ? t.bg : t.bgCard, border: `0.5px solid ${passo.done ? t.border : t.borderCard}`, borderRadius: 10, cursor: passo.done ? 'default' : 'pointer', opacity: passo.done ? 0.6 : 1 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: '50%', background: passo.done ? t.text : t.bg, border: `0.5px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {passo.done
-                      ? <span style={{ color: t.bg, fontSize: 13 }}>✓</span>
-                      : <span style={{ color: t.textFaint, fontSize: 12, fontWeight: 500 }}>{i + 1}</span>
+                      ? <span style={{ color: t.bg, fontSize: 12 }}>✓</span>
+                      : <span style={{ color: t.textFaint, fontSize: 11, fontWeight: 500 }}>{i + 1}</span>
                     }
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ color: t.text, fontSize: 13, fontWeight: 500, margin: '0 0 2px', textDecoration: passo.done ? 'line-through' : 'none' }}>{passo.label}</p>
-                    <p style={{ color: t.textFaint, fontSize: 12, margin: 0 }}>{passo.desc}</p>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ color: t.text, fontSize: 13, fontWeight: 500, margin: '0 0 1px', textDecoration: passo.done ? 'line-through' : 'none' }}>{passo.label}</p>
+                    <p style={{ color: t.textFaint, fontSize: 11, margin: 0 }}>{passo.desc}</p>
                   </div>
-                  {!passo.done && (
-                    <span style={{ color: t.textFaint, fontSize: 16 }}>→</span>
-                  )}
+                  {!passo.done && <span style={{ color: t.textFaint, fontSize: 16, flexShrink: 0 }}>→</span>}
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* KPIs — sempre visíveis */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+        {/* KPIs */}
+        <div className="dash-kpi2">
           {[
             { label: 'Receita mensal recorrente', value: mrr.toLocaleString('pt-BR', { maximumFractionDigits: 0 }), unit: 'reais / mes', accent: true },
             { label: 'Recebido este mes', value: pagamentosMes.toLocaleString('pt-BR', { maximumFractionDigits: 0 }), unit: 'reais confirmados', accent: false },
           ].map(card => (
-            <div key={card.label} style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '24px 28px', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, width: 3, height: '100%', background: card.accent ? t.accentBar : t.border, borderRadius: 0 }} />
-              <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', margin: '0 0 12px' }}>{card.label}</p>
-              <p style={{ color: t.text, fontSize: 44, fontWeight: 200, letterSpacing: -2, margin: '0 0 4px', lineHeight: 1 }}>{card.value}</p>
-              <p style={{ color: t.textFaint, fontSize: 12, margin: 0 }}>{card.unit}</p>
+            <div key={card.label} className="kpi-card-pad" style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '24px 28px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, width: 3, height: '100%', background: card.accent ? t.accentBar : t.border }} />
+              <p className="kpi-label" style={{ color: t.textFaint, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', margin: '0 0 10px' }}>{card.label}</p>
+              <p className="kpi-value-lg" style={{ color: t.text, fontWeight: 200, letterSpacing: -2, margin: '0 0 4px', lineHeight: 1 }}>{card.value}</p>
+              <p style={{ color: t.textFaint, fontSize: 11, margin: 0 }}>{card.unit}</p>
             </div>
           ))}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 20 }}>
+
+        <div className="dash-kpi3">
           {[
             { label: 'Assinantes ativos', value: totalAtivos, unit: 'clientes', click: '/assinantes' },
             { label: 'Pacotes criados', value: totalPacotes, unit: 'planos', click: '/pacotes' },
             { label: 'Renovacoes hoje', value: renovacoesHoje, unit: 'cobracas', click: '/pagamentos' },
           ].map(card => (
-            <div key={card.label} onClick={() => router.push(card.click)}
+            <div key={card.label} className="kpi-card-pad" onClick={() => router.push(card.click)}
               style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '20px 24px', cursor: 'pointer' }}>
-              <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', margin: '0 0 10px' }}>{card.label}</p>
-              <p style={{ color: t.text, fontSize: 36, fontWeight: 200, letterSpacing: -1, margin: '0 0 4px', lineHeight: 1 }}>{card.value}</p>
-              <p style={{ color: t.textFaint, fontSize: 12, margin: 0 }}>{card.unit}</p>
+              <p className="kpi-label" style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', margin: '0 0 8px' }}>{card.label}</p>
+              <p className="kpi-value-md" style={{ color: t.text, fontWeight: 200, letterSpacing: -1, margin: '0 0 4px', lineHeight: 1 }}>{card.value}</p>
+              <p style={{ color: t.textFaint, fontSize: 11, margin: 0 }}>{card.unit}</p>
             </div>
           ))}
         </div>
 
-        {/* Grafico + Agendamentos — só com dados */}
+        {/* Grafico + Agendamentos */}
         {setupCompleto && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16, marginBottom: 16 }}>
-            <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '24px 28px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div className="dash-mid">
+            <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                 <div>
                   <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', margin: '0 0 4px' }}>Historico</p>
                   <p style={{ color: t.text, fontSize: 14, fontWeight: 500, margin: 0 }}>Ultimos 6 meses</p>
@@ -234,15 +250,15 @@ export default function Dashboard() {
                   Total: R$ {grafico.reduce((a, g) => a + g.valor, 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
                 </p>
               </div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 120 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 100 }}>
                 {grafico.map((g, i) => {
                   const altura = maxGrafico > 0 ? (g.valor / maxGrafico) * 100 : 0
                   const isAtual = i === grafico.length - 1
                   return (
-                    <div key={g.mes} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end' }}>
-                      {g.valor > 0 && <p style={{ color: t.textFaint, fontSize: 10, margin: 0 }}>{g.valor >= 1000 ? `${(g.valor / 1000).toFixed(1)}k` : g.valor}</p>}
+                    <div key={g.mes} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, height: '100%', justifyContent: 'flex-end' }}>
+                      {g.valor > 0 && <p style={{ color: t.textFaint, fontSize: 9, margin: 0 }}>{g.valor >= 1000 ? `${(g.valor / 1000).toFixed(1)}k` : g.valor}</p>}
                       <div style={{ width: '100%', height: `${Math.max(altura, g.valor > 0 ? 4 : 0)}%`, background: isAtual ? t.text : t.border, borderRadius: '4px 4px 0 0', minHeight: g.valor > 0 ? 4 : 0 }} />
-                      <p style={{ color: isAtual ? t.text : t.textFaint, fontSize: 11, margin: 0, fontWeight: isAtual ? 500 : 400 }}>{g.mes}</p>
+                      <p style={{ color: isAtual ? t.text : t.textFaint, fontSize: 10, margin: 0, fontWeight: isAtual ? 500 : 400 }}>{g.mes}</p>
                     </div>
                   )
                 })}
@@ -250,7 +266,7 @@ export default function Dashboard() {
             </div>
 
             <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px', borderBottom: `0.5px solid ${t.rowBorder}`, display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ padding: '16px 20px', borderBottom: `0.5px solid ${t.rowBorder}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', margin: '0 0 2px' }}>Hoje</p>
                   <p style={{ color: t.text, fontSize: 13, fontWeight: 500, margin: 0 }}>Agendamentos</p>
@@ -258,7 +274,7 @@ export default function Dashboard() {
                 <button onClick={() => router.push('/agenda')} style={{ background: 'none', border: 'none', color: t.textFaint, fontSize: 12, cursor: 'pointer' }}>Ver agenda</button>
               </div>
               {agendamentosHoje.length === 0 ? (
-                <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+                <div style={{ padding: '28px 20px', textAlign: 'center' }}>
                   <p style={{ color: t.textFaint, fontSize: 12, marginBottom: 12 }}>Nenhum agendamento hoje</p>
                   <button onClick={() => router.push('/agenda')} style={{ background: t.text, color: t.bg, border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 11, cursor: 'pointer' }}>Abrir agenda</button>
                 </div>
@@ -277,38 +293,35 @@ export default function Dashboard() {
         )}
 
         {/* Assinantes + Inativos */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="dash-bottom">
           <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, overflow: 'hidden' }}>
-            <div style={{ padding: '16px 24px', borderBottom: `0.5px solid ${t.rowBorder}`, display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ padding: '16px 20px', borderBottom: `0.5px solid ${t.rowBorder}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <p style={{ color: t.text, fontSize: 13, fontWeight: 500, margin: 0 }}>Assinantes recentes</p>
               <button onClick={() => router.push('/assinantes')} style={{ background: 'none', border: 'none', color: t.textFaint, fontSize: 12, cursor: 'pointer' }}>Ver todos</button>
             </div>
             {assinantesRecentes.length === 0 ? (
-              <div style={{ padding: '32px 24px', textAlign: 'center' }}>
+              <div style={{ padding: '28px 20px', textAlign: 'center' }}>
                 <p style={{ color: t.textFaint, fontSize: 13, marginBottom: 12 }}>Nenhum assinante ainda</p>
                 <button onClick={() => router.push('/assinantes')} style={{ background: t.text, color: t.bg, border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 11, cursor: 'pointer' }}>Adicionar assinante</button>
               </div>
             ) : assinantesRecentes.map((a, i) => (
-              <div key={a.id} style={{ padding: '13px 24px', borderBottom: i < assinantesRecentes.length - 1 ? `0.5px solid ${t.rowBorder}` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.text, fontSize: 12, fontWeight: 500 }}>
+              <div key={a.id} style={{ padding: '12px 20px', borderBottom: i < assinantesRecentes.length - 1 ? `0.5px solid ${t.rowBorder}` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.text, fontSize: 12, fontWeight: 500, flexShrink: 0 }}>
                     {a.nome.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <p style={{ color: t.text, fontSize: 13, margin: '0 0 1px' }}>{a.nome}</p>
-                    <p style={{ color: t.textFaint, fontSize: 11, margin: 0 }}>{a.pacotes?.nome}</p>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ color: t.text, fontSize: 12, margin: '0 0 1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.nome}</p>
+                    <p style={{ color: t.textFaint, fontSize: 11, margin: 0 }}>R$ {(a.pacotes?.preco_mensal ?? 0).toFixed(0)}/mes</p>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <p style={{ color: t.textMuted, fontSize: 12, margin: 0 }}>R$ {(a.pacotes?.preco_mensal ?? 0).toFixed(0)}/mes</p>
-                  <span style={{ background: statusStyle[a.status]?.bg, color: statusStyle[a.status]?.text, fontSize: 10, padding: '3px 10px', borderRadius: 20 }}>{a.status}</span>
-                </div>
+                <span style={{ background: statusStyle[a.status]?.bg, color: statusStyle[a.status]?.text, fontSize: 10, padding: '3px 8px', borderRadius: 20, flexShrink: 0 }}>{a.status}</span>
               </div>
             ))}
           </div>
 
           <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, overflow: 'hidden' }}>
-            <div style={{ padding: '16px 24px', borderBottom: `0.5px solid ${t.rowBorder}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '16px 20px', borderBottom: `0.5px solid ${t.rowBorder}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <p style={{ color: t.text, fontSize: 13, fontWeight: 500, margin: '0 0 2px' }}>Clientes inativos</p>
                 <p style={{ color: t.textFaint, fontSize: 11, margin: 0 }}>Sem visita ha 30+ dias</p>
@@ -320,7 +333,7 @@ export default function Dashboard() {
               )}
             </div>
             {clientesInativos.length === 0 ? (
-              <div style={{ padding: '32px 24px', textAlign: 'center' }}>
+              <div style={{ padding: '28px 20px', textAlign: 'center' }}>
                 <p style={{ color: t.textFaint, fontSize: 13 }}>Nenhum cliente inativo</p>
                 <p style={{ color: t.textFaint, fontSize: 11, marginTop: 4 }}>Todos visitaram recentemente</p>
               </div>
@@ -329,23 +342,23 @@ export default function Dashboard() {
                 ? Math.floor((new Date().getTime() - new Date(a.ultimo_atendimento).getTime()) / (1000 * 60 * 60 * 24))
                 : null
               return (
-                <div key={a.id} style={{ padding: '13px 24px', borderBottom: i < clientesInativos.length - 1 ? `0.5px solid ${t.rowBorder}` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.text, fontSize: 12, fontWeight: 500 }}>
+                <div key={a.id} style={{ padding: '12px 20px', borderBottom: i < clientesInativos.length - 1 ? `0.5px solid ${t.rowBorder}` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.text, fontSize: 12, fontWeight: 500, flexShrink: 0 }}>
                       {a.nome.charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <p style={{ color: t.text, fontSize: 13, margin: '0 0 1px' }}>{a.nome}</p>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ color: t.text, fontSize: 12, margin: '0 0 1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.nome}</p>
                       <p style={{ color: t.textFaint, fontSize: 11, margin: 0 }}>{a.pacotes?.nome}</p>
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    {dias && <span style={{ background: t.badgeInadimplente, color: t.badgeInadimplenteText, fontSize: 10, padding: '3px 10px', borderRadius: 20 }}>{dias}d sem visita</span>}
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    {dias && <span style={{ background: t.badgeInadimplente, color: t.badgeInadimplenteText, fontSize: 10, padding: '3px 8px', borderRadius: 20 }}>{dias}d</span>}
                     {a.whatsapp && (
                       <a href={`https://wa.me/${a.whatsapp}?text=Oi ${a.nome.split(' ')[0]}! Sentimos sua falta. Que tal agendar?`}
                         target="_blank" rel="noreferrer"
                         style={{ display: 'block', marginTop: 4, color: '#25D366', fontSize: 10, textDecoration: 'none' }}>
-                        Chamar no WhatsApp
+                        WhatsApp
                       </a>
                     )}
                   </div>
