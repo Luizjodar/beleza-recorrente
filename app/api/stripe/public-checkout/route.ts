@@ -71,7 +71,7 @@ export async function POST(req: Request) {
 
     const { data: salaoData } = await supabase
       .from('saloes')
-      .select('taxa_reserva')
+      .select('taxa_reserva, stripe_account_id')
       .eq('id', salaoId)
       .single()
 
@@ -81,6 +81,9 @@ export async function POST(req: Request) {
     const descricaoCobranca = taxaReserva
       ? `Taxa de reserva (R$ ${taxaReserva.toFixed(0)} descontado no dia) — Plano: ${pacote.nome}`
       : `Plano: ${pacote.nome}`
+
+    // Calcular comissão de 5% para a plataforma
+    const comissaoPlataforma = Math.round(valorCobrado * 100 * 0.05)
 
     const { data: assinante, error: assinanteError } = await supabase
       .from('assinantes')
@@ -101,7 +104,9 @@ export async function POST(req: Request) {
     }
 
     const valor = valorCobrado
-    const session = await stripe.checkout.sessions.create({
+
+    // Configuração base da sessão
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
       locale: 'pt-BR',
       client_reference_id: assinante.id,
@@ -141,8 +146,23 @@ export async function POST(req: Request) {
           horario_agendamento: body.horarioSelecionado || '',
         },
       },
-    })
+    }
 
+    // Se o salão tem conta Connect configurada, usar repasse automático
+    if (salaoData?.stripe_account_id) {
+      const account = await stripe.accounts.retrieve(salaoData.stripe_account_id)
+      if (account.charges_enabled) {
+        sessionConfig.payment_intent_data = {
+          ...sessionConfig.payment_intent_data,
+          application_fee_amount: comissaoPlataforma,
+          transfer_data: {
+            destination: salaoData.stripe_account_id,
+          },
+        }
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig)
     return NextResponse.json({ url: session.url })
   }
 

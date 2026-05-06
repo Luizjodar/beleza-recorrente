@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useTema } from '@/app/lib/tema'
@@ -23,6 +23,9 @@ export default function ConfiguracoesPage() {
   const [whatsapp, setWhatsapp] = useState('')
   const [emailContato, setEmailContato] = useState('')
   const [taxaReserva, setTaxaReserva] = useState('')
+  const [stripeConectado, setStripeConectado] = useState(false)
+  const [stripeCarregando, setStripeCarregando] = useState(false)
+  const [stripeChecking, setStripeChecking] = useState(true)
 
   useEffect(() => {
     async function init() {
@@ -39,6 +42,44 @@ export default function ConfiguracoesPage() {
     }
     init()
   }, [router])
+
+  const verificarStripe = useCallback(async (id: string) => {
+    setStripeChecking(true)
+    const res = await fetch('/api/stripe/connect/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ salaoId: id }),
+    })
+    const data = await res.json()
+    setStripeConectado(data.conectado || false)
+    setStripeChecking(false)
+  }, [])
+
+  const stripeChecked = useRef(false)
+  useEffect(() => {
+    if (!salaoId || stripeChecked.current) return
+    stripeChecked.current = true
+    const params = new URLSearchParams(window.location.search)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    verificarStripe(salaoId).then(() => {
+      if (params.get('stripe') === 'sucesso') {
+        window.history.replaceState({}, '', '/configuracoes')
+      }
+    })
+  }, [salaoId, verificarStripe])
+
+  async function conectarStripe() {
+    if (!salaoId) return
+    setStripeCarregando(true)
+    const res = await fetch('/api/stripe/connect/onboarding', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ salaoId }),
+    })
+    const data = await res.json()
+    if (data.url) window.location.href = data.url
+    else setStripeCarregando(false)
+  }
 
   function gerarSlug(valor: string) {
     return valor.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-')
@@ -129,7 +170,38 @@ export default function ConfiguracoesPage() {
           <div style={{ padding: '20px 24px', borderBottom: `0.5px solid ${t.rowBorder}` }}>
             <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', margin: 0 }}>Pagamento online</p>
           </div>
-          <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+            {/* Stripe Connect */}
+            <div style={{ border: `0.5px solid ${stripeConectado ? t.badgeAtivoText : t.border}`, borderRadius: 12, padding: '16px 20px', background: stripeConectado ? t.badgeAtivo : t.bg }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <p style={{ color: stripeConectado ? t.badgeAtivoText : t.text, fontSize: 13, fontWeight: 500, margin: '0 0 3px' }}>
+                    {stripeChecking ? 'Verificando...' : stripeConectado ? '✓ Conta bancária conectada' : 'Conectar conta bancária'}
+                  </p>
+                  <p style={{ color: t.textFaint, fontSize: 11, margin: 0 }}>
+                    {stripeConectado
+                      ? 'Você recebe os pagamentos diretamente. Comissão de 5% por transação.'
+                      : 'Conecte sua conta para receber os pagamentos das reservas diretamente.'}
+                  </p>
+                </div>
+                {!stripeChecking && (
+                  <button onClick={conectarStripe} disabled={stripeCarregando}
+                    style={{
+                      background: stripeConectado ? 'none' : t.text,
+                      color: stripeConectado ? t.textFaint : t.navBg,
+                      border: stripeConectado ? `0.5px solid ${t.border}` : 'none',
+                      borderRadius: 8, padding: '8px 16px', fontSize: 11,
+                      cursor: 'pointer', whiteSpace: 'nowrap', opacity: stripeCarregando ? 0.5 : 1,
+                      marginLeft: 16, flexShrink: 0,
+                    }}>
+                    {stripeCarregando ? 'Aguarde...' : stripeConectado ? 'Reconfigurar' : 'Conectar Stripe'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Taxa de reserva */}
             <div>
               <label style={labelStyle}>Taxa de reserva (R$)</label>
               <div style={{ display: 'flex', alignItems: 'center', border: `0.5px solid ${t.border}`, borderRadius: 10, overflow: 'hidden' }}>
