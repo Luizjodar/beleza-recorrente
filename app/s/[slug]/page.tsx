@@ -4,6 +4,14 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/app/lib/supabase'
 import { useParams, useSearchParams } from 'next/navigation'
 
+type HorarioSalao = {
+  dia_semana: number
+  ativo: boolean
+  hora_inicio: string
+  hora_fim: string
+  intervalo_min: number
+}
+
 type Salao = {
   id: string
   nome: string
@@ -14,6 +22,7 @@ type Salao = {
   email_contato?: string | null
   pagamento_online?: boolean | null
   taxa_reserva?: number | null
+  horariosSalao?: HorarioSalao[]
 }
 
 type PacoteItem = {
@@ -63,6 +72,24 @@ const labelStyle = {
 function dinheiro(valor: string | number | null | undefined) {
   const num = Number(valor || 0)
   return num % 1 === 0 ? num.toFixed(0) : num.toFixed(2).replace('.', ',')
+}
+
+
+function gerarHorariosDisponiveis(horariosSalao: HorarioSalao[], diaSemana: number): string[] {
+  const config = horariosSalao.find(h => h.dia_semana === diaSemana && h.ativo)
+  if (!config) return []
+  const result: string[] = []
+  const [hi, mi] = config.hora_inicio.split(':').map(Number)
+  const [hf, mf] = config.hora_fim.split(':').map(Number)
+  let mins = hi * 60 + mi
+  const fimMins = hf * 60 + mf
+  while (mins < fimMins) {
+    const h = Math.floor(mins / 60).toString().padStart(2, '0')
+    const m = (mins % 60).toString().padStart(2, '0')
+    result.push(`${h}:${m}`)
+    mins += config.intervalo_min
+  }
+  return result
 }
 
 function AgendamentoPromo({ promo, salao, slug }: { promo: Promocao; salao: Salao; slug: string }) {
@@ -128,14 +155,18 @@ function AgendamentoPromo({ promo, salao, slug }: { promo: Promocao; salao: Sala
     const dias = []
     const hoje = new Date()
     hoje.setHours(0, 0, 0, 0)
+    const diasAtivos = salao.horariosSalao && salao.horariosSalao.length > 0
+      ? salao.horariosSalao.filter((h: HorarioSalao) => h.ativo).map((h: HorarioSalao) => h.dia_semana)
+      : [1, 2, 3, 4, 5]
 
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 60; i++) {
       const data = new Date(hoje)
       data.setDate(data.getDate() + i)
       const diaSemana = data.getDay()
-      if (diaSemana !== 0 && diaSemana !== 6) {
+      if (diasAtivos.includes(diaSemana)) {
         dias.push(data.toISOString().split('T')[0])
       }
+      if (dias.length >= 30) break
     }
     return dias
   }
@@ -243,7 +274,10 @@ function AgendamentoPromo({ promo, salao, slug }: { promo: Promocao; salao: Sala
                 <>
                   <p style={{ ...labelStyle, marginBottom: 12 }}>HORARIOS DISPONIVEIS</p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-                    {horarios.map(horario => (
+                    {(salao.horariosSalao && salao.horariosSalao.length > 0
+                      ? gerarHorariosDisponiveis(salao.horariosSalao as HorarioSalao[], new Date(dataSelecionada + 'T12:00:00').getDay())
+                      : ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00']
+                    ).map(horario => (
                       <button
                         key={horario}
                         onClick={() => setHorarioSelecionado(horario)}
@@ -306,21 +340,24 @@ export default function PaginaPublica() {
   const [dataSelecionadaPlano, setDataSelecionadaPlano] = useState<string>('')
   const [horarioSelecionadoPlano, setHorarioSelecionadoPlano] = useState<string>('')
   const [mostrarCalendarioPlano, setMostrarCalendarioPlano] = useState(false)
-
-  const horarios = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00']
+  const [horariosSalao, setHorariosSalao] = useState<HorarioSalao[]>([])
 
   function obterProximosDiasPlano() {
     const dias = []
     const hoje = new Date()
     hoje.setHours(0, 0, 0, 0)
+    const diasAtivos = horariosSalao.length > 0
+      ? horariosSalao.filter(h => h.ativo).map(h => h.dia_semana)
+      : [1, 2, 3, 4, 5]
 
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 60; i++) {
       const data = new Date(hoje)
       data.setDate(data.getDate() + i)
       const diaSemana = data.getDay()
-      if (diaSemana !== 0 && diaSemana !== 6) {
+      if (diasAtivos.includes(diaSemana)) {
         dias.push(data.toISOString().split('T')[0])
       }
+      if (dias.length >= 30) break
     }
     return dias
   }
@@ -334,6 +371,8 @@ export default function PaginaPublica() {
 
       if (!salaoData) { setLoading(false); return }
       setSalao(salaoData as Salao)
+      const { data: hsSalao } = await supabase.from('horarios_salao').select('*').eq('salao_id', salaoData.id)
+      if (hsSalao && hsSalao.length > 0) setHorariosSalao(hsSalao as HorarioSalao[])
 
       const { data: pacotesData } = await supabase
         .from('pacotes')
@@ -637,7 +676,10 @@ export default function PaginaPublica() {
                       <>
                         <p style={{ ...labelStyle, marginBottom: 12 }}>HORARIOS DISPONIVEIS</p>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-                          {horarios.map(horario => (
+                          {(horariosSalao.length > 0
+                            ? gerarHorariosDisponiveis(horariosSalao, new Date(dataSelecionadaPlano + 'T12:00:00').getDay())
+                            : ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00']
+                          ).map(horario => (
                             <button
                               key={horario}
                               onClick={() => setHorarioSelecionadoPlano(horario)}
