@@ -92,7 +92,7 @@ function gerarHorariosDisponiveis(horariosSalao: HorarioSalao[], diaSemana: numb
   return result
 }
 
-function AgendamentoPromo({ promo, salao, slug }: { promo: Promocao; salao: Salao; slug: string }) {
+function AgendamentoPromo({ promo, salao, slug, horariosSalao }: { promo: Promocao; salao: Salao; slug: string; horariosSalao: HorarioSalao[] }) {
   const [aberto, setAberto] = useState(false)
   const [nome, setNome] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
@@ -102,8 +102,6 @@ function AgendamentoPromo({ promo, salao, slug }: { promo: Promocao; salao: Sala
   const [mostrarCalendario, setMostrarCalendario] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
-
-  const horarios = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00']
 
   function pagarPessoalmente() {
     if (!nome || !whatsapp || !dataSelecionada || !horarioSelecionado) return
@@ -155,8 +153,8 @@ function AgendamentoPromo({ promo, salao, slug }: { promo: Promocao; salao: Sala
     const dias = []
     const hoje = new Date()
     hoje.setHours(0, 0, 0, 0)
-    const diasAtivos = salao.horariosSalao && salao.horariosSalao.length > 0
-      ? salao.horariosSalao.filter((h: HorarioSalao) => h.ativo).map((h: HorarioSalao) => h.dia_semana)
+    const diasAtivos = horariosSalao.length > 0
+      ? horariosSalao.filter((h: HorarioSalao) => h.ativo).map((h: HorarioSalao) => h.dia_semana)
       : [1, 2, 3, 4, 5]
 
     for (let i = 0; i < 60; i++) {
@@ -274,8 +272,8 @@ function AgendamentoPromo({ promo, salao, slug }: { promo: Promocao; salao: Sala
                 <>
                   <p style={{ ...labelStyle, marginBottom: 12 }}>HORARIOS DISPONIVEIS</p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-                    {(salao.horariosSalao && salao.horariosSalao.length > 0
-                      ? gerarHorariosDisponiveis(salao.horariosSalao as HorarioSalao[], new Date(dataSelecionada + 'T12:00:00').getDay())
+                    {(horariosSalao.length > 0
+                      ? gerarHorariosDisponiveis(horariosSalao, new Date(dataSelecionada + 'T12:00:00').getDay())
                       : ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00']
                     ).map(horario => (
                       <button
@@ -556,7 +554,7 @@ export default function PaginaPublica() {
                         )}
                       </div>
                     </div>
-                    <AgendamentoPromo promo={p} salao={salao} slug={slug || ''} />
+                    <AgendamentoPromo promo={p} salao={salao} slug={slug || ''} horariosSalao={horariosSalao} />
                   </div>
                   </div>
                 </div>
