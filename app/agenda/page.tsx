@@ -281,32 +281,49 @@ export default function AgendaPage() {
 
   return (
     <Layout>
-    <div style={{ fontFamily: "system-ui, sans-serif" }}>
-<div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
+    <style>{`
+      .ag-pad { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+      .ag-header { margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+      .ag-header-btns { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .ag-semana-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 20px; }
+      .ag-semana-layout { display: grid; grid-template-columns: 1fr 300px; gap: 16px; }
+      .ag-config-btn { display: inline-flex; }
+      .modal-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      @media (max-width: 768px) {
+        .ag-pad { padding: 16px 12px; }
+        .ag-header { gap: 8px; }
+        .ag-header-btns { width: 100%; justify-content: space-between; }
+        .ag-config-btn { display: none !important; }
+        .ag-semana-grid { gap: 4px; }
+        .ag-semana-layout { grid-template-columns: 1fr; }
+        .ag-painel-lateral { order: -1; }
+        .modal-grid2 { grid-template-columns: 1fr 1fr; gap: 8px; }
+      }
+    `}</style>
+    <div className="ag-pad">
 
         {/* Header */}
-        <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div className="ag-header">
           <div>
             <p style={{ color: t.textMuted, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', margin: '0 0 4px' }}>Gestao</p>
             <h1 style={{ color: t.text, fontSize: 28, fontWeight: 300, margin: 0, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>Agenda</h1>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {/* Toggle Semana/Mes */}
+          <div className="ag-header-btns">
             <div style={{ display: 'flex', background: t.bgCard, border: `0.5px solid ${t.border}`, borderRadius: 10, padding: 3 }}>
               {(['semana', 'mes'] as const).map(v => (
                 <button key={v} onClick={() => { setView(v); setOffset(0) }}
-                  style={{ background: view === v ? t.text : 'none', color: view === v ? t.bg : t.textMuted, border: 'none', borderRadius: 8, padding: '6px 16px', fontSize: 12, cursor: 'pointer', fontWeight: view === v ? 500 : 400, transition: 'all 0.15s' }}>
+                  style={{ background: view === v ? t.text : 'none', color: view === v ? t.bg : t.textMuted, border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, cursor: 'pointer', fontWeight: view === v ? 500 : 400 }}>
                   {v.charAt(0).toUpperCase() + v.slice(1)}
                 </button>
               ))}
             </div>
-            <button onClick={() => router.push('/agenda/horarios')}
+            <button className="ag-config-btn" onClick={() => router.push('/agenda/horarios')}
               style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 10, padding: '9px 16px', fontSize: 12, cursor: 'pointer' }}>
               Configurar horarios
             </button>
             <button onClick={() => { setDataAg(diaSelecionado); setNovoAberto(true) }}
-              style={{ background: t.text, color: t.bg, border: 'none', borderRadius: 10, padding: '9px 18px', fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>
-              + Novo agendamento
+              style={{ background: t.text, color: t.bg, border: 'none', borderRadius: 10, padding: '9px 16px', fontSize: 12, cursor: 'pointer', fontWeight: 500, whiteSpace: 'nowrap' }}>
+              + Novo
             </button>
           </div>
         </div>
@@ -318,24 +335,24 @@ export default function AgendaPage() {
         )}
 
         {/* Navegacao */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
           <button onClick={() => setOffset(offset - 1)}
-            style={{ background: t.bgCard, border: `0.5px solid ${t.border}`, color: t.text, borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer' }}>←</button>
+            style={{ background: t.bgCard, border: `0.5px solid ${t.border}`, color: t.text, borderRadius: 8, padding: '7px 12px', fontSize: 13, cursor: 'pointer', flexShrink: 0 }}>←</button>
           <p style={{ color: t.text, fontSize: 13, fontWeight: 500, margin: 0, flex: 1, textAlign: 'center' }}>{labelAtual()}</p>
           {offset !== 0 && (
             <button onClick={() => { setOffset(0); setDiaSelecionado(diaHoje) }}
-              style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 8, padding: '7px 12px', fontSize: 11, cursor: 'pointer' }}>
+              style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 8, padding: '7px 10px', fontSize: 11, cursor: 'pointer', flexShrink: 0 }}>
               Hoje
             </button>
           )}
           <button onClick={() => setOffset(offset + 1)}
-            style={{ background: t.bgCard, border: `0.5px solid ${t.border}`, color: t.text, borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer' }}>→</button>
+            style={{ background: t.bgCard, border: `0.5px solid ${t.border}`, color: t.text, borderRadius: 8, padding: '7px 12px', fontSize: 13, cursor: 'pointer', flexShrink: 0 }}>→</button>
         </div>
 
         {/* VISAO SEMANA */}
         {view === 'semana' && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 20 }}>
+            <div className="ag-semana-grid">
               {(periodo.dias as Date[]).map((dia, i) => {
                 const dataStr = dataLocal(dia)
                 const ags = agDia(dataStr)
@@ -345,69 +362,69 @@ export default function AgendaPage() {
                 const pendentes = ags.filter(a => a.status === 'pendente').length
                 return (
                   <div key={i} onClick={() => setDiaSelecionado(dataStr)}
-                    style={{ background: isSelecionado ? t.text : t.bgCard, border: `0.5px solid ${isHoje && !isSelecionado ? t.accentBar : t.borderCard}`, borderRadius: 14, padding: '10px 8px', cursor: 'pointer', transition: 'all 0.15s' }}>
-                    <p style={{ color: isSelecionado ? t.bg : t.textFaint, fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', margin: '0 0 3px', textAlign: 'center' }}>{DIAS[i]}</p>
-                    <p style={{ color: isSelecionado ? t.bg : t.text, fontSize: 20, fontWeight: isHoje ? 600 : 300, margin: '0 0 8px', textAlign: 'center', lineHeight: 1 }}>{dia.getDate()}</p>
+                    style={{ background: isSelecionado ? t.text : t.bgCard, border: `0.5px solid ${isHoje && !isSelecionado ? t.accentBar : t.borderCard}`, borderRadius: 12, padding: '8px 4px', cursor: 'pointer' }}>
+                    <p style={{ color: isSelecionado ? t.bg : t.textFaint, fontSize: 9, letterSpacing: 1, textTransform: 'uppercase', margin: '0 0 3px', textAlign: 'center' }}>{DIAS[i]}</p>
+                    <p style={{ color: isSelecionado ? t.bg : t.text, fontSize: 18, fontWeight: isHoje ? 600 : 300, margin: '0 0 6px', textAlign: 'center', lineHeight: 1 }}>{dia.getDate()}</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      {confirmados > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}><div style={{ width: 6, height: 6, borderRadius: '50%', background: isSelecionado ? 'rgba(255,255,255,0.6)' : '#22c55e' }} /><span style={{ color: isSelecionado ? 'rgba(255,255,255,0.7)' : '#15803d', fontSize: 10 }}>{confirmados}</span></div>}
-                      {pendentes > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}><div style={{ width: 6, height: 6, borderRadius: '50%', background: isSelecionado ? 'rgba(255,255,255,0.6)' : '#f59e0b' }} /><span style={{ color: isSelecionado ? 'rgba(255,255,255,0.7)' : '#b45309', fontSize: 10 }}>{pendentes}</span></div>}
-                      {ags.length === 0 && <p style={{ color: isSelecionado ? 'rgba(255,255,255,0.3)' : t.textFaint, fontSize: 10, margin: 0, textAlign: 'center' }}>livre</p>}
+                      {confirmados > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'center' }}><div style={{ width: 5, height: 5, borderRadius: '50%', background: isSelecionado ? 'rgba(255,255,255,0.6)' : '#22c55e' }} /><span style={{ color: isSelecionado ? 'rgba(255,255,255,0.7)' : '#15803d', fontSize: 10 }}>{confirmados}</span></div>}
+                      {pendentes > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'center' }}><div style={{ width: 5, height: 5, borderRadius: '50%', background: isSelecionado ? 'rgba(255,255,255,0.6)' : '#f59e0b' }} /><span style={{ color: isSelecionado ? 'rgba(255,255,255,0.7)' : '#b45309', fontSize: 10 }}>{pendentes}</span></div>}
+                      {ags.length === 0 && <p style={{ color: isSelecionado ? 'rgba(255,255,255,0.3)' : t.textFaint, fontSize: 9, margin: 0, textAlign: 'center' }}>livre</p>}
                     </div>
                   </div>
                 )
               })}
             </div>
 
-            {/* Layout semana: linha do tempo + painel */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 16 }}>
+            <div className="ag-semana-layout">
+              {/* Linha do tempo */}
               <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, overflow: 'hidden' }}>
-                <div style={{ padding: '16px 24px', borderBottom: `0.5px solid ${t.rowBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ padding: '14px 20px', borderBottom: `0.5px solid ${t.rowBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
                     <p style={{ color: t.text, fontSize: 14, fontWeight: 500, margin: 0 }}>{DIAS_FULL[diaSelecionadoObj.getDay()]}</p>
-                    <p style={{ color: t.textFaint, fontSize: 12, margin: '2px 0 0' }}>{diaSelecionadoObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                    <p style={{ color: t.textFaint, fontSize: 11, margin: '2px 0 0' }}>{diaSelecionadoObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                   </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 6 }}>
                     {(Object.entries(STATUS_CONFIG) as [StatusAgendamento, StatusConfig][]).map(([key, cfg]) => {
                       const count = agHoje.filter(a => a.status === key).length
                       if (count === 0) return null
-                      return <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 7, height: 7, borderRadius: '50%', background: cfg.dot }} /><span style={{ color: t.textMuted, fontSize: 11 }}>{count}</span></div>
+                      return <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 3 }}><div style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.dot }} /><span style={{ color: t.textMuted, fontSize: 11 }}>{count}</span></div>
                     })}
                   </div>
                 </div>
                 {horariosDisponiveis.length === 0 ? (
-                  <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+                  <div style={{ padding: '40px 20px', textAlign: 'center' }}>
                     <p style={{ color: t.textFaint, fontSize: 13, marginBottom: 12 }}>{configDia === undefined ? 'Horarios nao configurados' : 'Salao fechado neste dia'}</p>
                     <button onClick={() => router.push('/agenda/horarios')} style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 8, padding: '8px 16px', fontSize: 12, cursor: 'pointer' }}>Configurar horarios</button>
                   </div>
                 ) : (
-                  <div style={{ padding: '12px 0' }}>
+                  <div style={{ padding: '8px 0' }}>
                     {horariosDisponiveis.map((hora, i) => {
                       const ag = agHoje.find(a => a.horario.slice(0, 5) === hora)
                       const cfg = STATUS_CONFIG[statusAgendamento(ag?.status)]
                       return (
                         <div key={hora} style={{ display: 'flex', borderBottom: i < horariosDisponiveis.length - 1 ? `0.5px solid ${t.rowBorder}` : 'none' }}>
-                          <div style={{ width: 64, padding: '14px 12px', flexShrink: 0, borderRight: `0.5px solid ${t.rowBorder}` }}>
-                            <p style={{ color: t.textFaint, fontSize: 12, margin: 0, fontWeight: 500 }}>{hora}</p>
+                          <div style={{ width: 52, padding: '12px 8px', flexShrink: 0, borderRight: `0.5px solid ${t.rowBorder}`, textAlign: 'center' }}>
+                            <p style={{ color: t.textFaint, fontSize: 11, margin: 0, fontWeight: 500 }}>{hora}</p>
                           </div>
-                          <div style={{ flex: 1, padding: '10px 16px' }}>
+                          <div style={{ flex: 1, padding: '8px 12px', minWidth: 0 }}>
                             {ag ? (
-                              <div style={{ background: cfg.bg, borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.dot, flexShrink: 0 }} />
-                                  <div>
-                                    <p style={{ color: cfg.text, fontSize: 13, fontWeight: 500, margin: '0 0 2px' }}>{ag.cliente_nome}</p>
-                                    <p style={{ color: cfg.text, fontSize: 11, margin: 0, opacity: 0.8 }}>{ag.servico || 'Servico nao informado'}</p>
+                              <div style={{ background: cfg.bg, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: cfg.dot, flexShrink: 0 }} />
+                                  <div style={{ minWidth: 0 }}>
+                                    <p style={{ color: cfg.text, fontSize: 12, fontWeight: 500, margin: '0 0 1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ag.cliente_nome}</p>
+                                    <p style={{ color: cfg.text, fontSize: 11, margin: 0, opacity: 0.8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ag.servico || 'Servico nao informado'}</p>
                                   </div>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                                   <select value={statusAgendamento(ag.status)} onChange={e => alterarStatus(ag.id, e.target.value)} disabled={processando === ag.id}
-                                    style={{ background: 'transparent', border: 'none', color: cfg.text, fontSize: 11, cursor: 'pointer', outline: 'none' }}>
+                                    style={{ background: 'transparent', border: 'none', color: cfg.text, fontSize: 11, cursor: 'pointer', outline: 'none', maxWidth: 90 }}>
                                     <option value="pendente">Pendente</option>
                                     <option value="confirmado">Confirmado</option>
                                     <option value="concluido">Concluido</option>
                                     <option value="cancelado">Cancelado</option>
                                   </select>
-                                  <button onClick={() => excluir(ag.id)} style={{ background: 'none', border: 'none', color: cfg.text, fontSize: 14, cursor: 'pointer', opacity: 0.6 }}>✕</button>
+                                  <button onClick={() => excluir(ag.id)} style={{ background: 'none', border: 'none', color: cfg.text, fontSize: 14, cursor: 'pointer', opacity: 0.6, padding: '0 4px' }}>✕</button>
                                 </div>
                               </div>
                             ) : (
@@ -427,10 +444,10 @@ export default function AgendaPage() {
               </div>
 
               {/* Painel lateral */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div className="ag-painel-lateral" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '20px' }}>
                   <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', margin: '0 0 16px' }}>Resumo do dia</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {[
                       { label: 'Total agendados', val: agHoje.filter(a => a.status !== 'cancelado').length, color: t.text },
                       { label: 'Confirmados', val: agHoje.filter(a => a.status === 'confirmado').length, color: '#16a34a' },
@@ -444,24 +461,24 @@ export default function AgendaPage() {
                     ))}
                   </div>
                 </div>
-                <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, overflow: 'hidden', flex: 1 }}>
-                  <div style={{ padding: '16px 20px', borderBottom: `0.5px solid ${t.rowBorder}` }}>
+                <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 20px', borderBottom: `0.5px solid ${t.rowBorder}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', margin: 0 }}>Agendamentos</p>
+                    <button onClick={() => { setDataAg(diaSelecionado); setNovoAberto(true) }}
+                      style={{ background: 'none', border: 'none', color: t.textFaint, fontSize: 11, cursor: 'pointer' }}>+ Adicionar</button>
                   </div>
                   {agHoje.length === 0 ? (
-                    <div style={{ padding: '32px 20px', textAlign: 'center' }}>
-                      <p style={{ color: t.textFaint, fontSize: 12, margin: '0 0 12px' }}>Nenhum agendamento</p>
-                      <button onClick={() => { setDataAg(diaSelecionado); setNovoAberto(true) }}
-                        style={{ background: t.text, color: t.bg, border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 11, cursor: 'pointer' }}>+ Adicionar</button>
+                    <div style={{ padding: '24px 20px', textAlign: 'center' }}>
+                      <p style={{ color: t.textFaint, fontSize: 12, margin: 0 }}>Nenhum agendamento</p>
                     </div>
                   ) : agHoje.map((a, i) => {
                     const cfg = STATUS_CONFIG[statusAgendamento(a.status)]
                     return (
-                      <div key={a.id} style={{ padding: '12px 20px', borderBottom: i < agHoje.length - 1 ? `0.5px solid ${t.rowBorder}` : 'none', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.dot, marginTop: 4, flexShrink: 0 }} />
+                      <div key={a.id} style={{ padding: '10px 20px', borderBottom: i < agHoje.length - 1 ? `0.5px solid ${t.rowBorder}` : 'none', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                        <div style={{ width: 7, height: 7, borderRadius: '50%', background: cfg.dot, marginTop: 4, flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <p style={{ color: t.text, fontSize: 12, fontWeight: 500, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 130 }}>{a.cliente_nome}</p>
+                            <p style={{ color: t.text, fontSize: 12, fontWeight: 500, margin: '0 0 1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120 }}>{a.cliente_nome}</p>
                             <span style={{ color: t.textFaint, fontSize: 11 }}>{a.horario.slice(0, 5)}</span>
                           </div>
                           <p style={{ color: t.textFaint, fontSize: 11, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.servico || 'Servico nao informado'}</p>
@@ -478,15 +495,13 @@ export default function AgendaPage() {
         {/* VISAO MES */}
         {view === 'mes' && (
           <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, overflow: 'hidden' }}>
-            {/* Cabecalho dias da semana */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: `0.5px solid ${t.rowBorder}` }}>
               {DIAS.map(d => (
-                <div key={d} style={{ padding: '10px 0', textAlign: 'center' }}>
-                  <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', margin: 0 }}>{d}</p>
+                <div key={d} style={{ padding: '8px 0', textAlign: 'center' }}>
+                  <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', margin: 0 }}>{d}</p>
                 </div>
               ))}
             </div>
-            {/* Grade do mes */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
               {(periodo.dias as Date[]).map((dia, i) => {
                 const dataStr = dataLocal(dia)
@@ -498,49 +513,47 @@ export default function AgendaPage() {
                 const mesAtual = dia.getMonth() === ref.getMonth()
                 return (
                   <div key={i} onClick={() => setDiaSelecionado(dataStr)}
-                    style={{ minHeight: 90, padding: '8px 10px', borderRight: (i + 1) % 7 !== 0 ? `0.5px solid ${t.rowBorder}` : 'none', borderBottom: i < 35 ? `0.5px solid ${t.rowBorder}` : 'none', background: isSelecionado ? t.text : 'transparent', cursor: 'pointer', transition: 'background 0.1s' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <span style={{ fontSize: isHoje ? 13 : 12, fontWeight: isHoje ? 700 : 400, background: isHoje && !isSelecionado ? t.text : 'transparent', color: isSelecionado ? t.bg : isHoje && !isSelecionado ? t.bg : mesAtual ? t.text : t.textFaint, borderRadius: '50%', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    style={{ minHeight: 70, padding: '6px', borderRight: (i + 1) % 7 !== 0 ? `0.5px solid ${t.rowBorder}` : 'none', borderBottom: i < 35 ? `0.5px solid ${t.rowBorder}` : 'none', background: isSelecionado ? t.text : 'transparent', cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: 11, fontWeight: isHoje ? 700 : 400, background: isHoje && !isSelecionado ? t.text : 'transparent', color: isSelecionado ? t.bg : isHoje && !isSelecionado ? t.bg : mesAtual ? t.text : t.textFaint, borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {dia.getDate()}
                       </span>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      {ags.slice(0, 3).map(a => {
+                      {ags.slice(0, 2).map(a => {
                         const cfg = STATUS_CONFIG[statusAgendamento(a.status)]
                         return (
-                          <div key={a.id} style={{ background: isSelecionado ? 'rgba(255,255,255,0.2)' : cfg.bg, borderRadius: 4, padding: '2px 6px' }}>
-                            <p style={{ color: isSelecionado ? t.bg : cfg.text, fontSize: 10, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <div key={a.id} style={{ background: isSelecionado ? 'rgba(255,255,255,0.2)' : cfg.bg, borderRadius: 3, padding: '1px 4px' }}>
+                            <p style={{ color: isSelecionado ? t.bg : cfg.text, fontSize: 9, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {a.horario.slice(0, 5)} {a.cliente_nome.split(' ')[0]}
                             </p>
                           </div>
                         )
                       })}
-                      {ags.length > 3 && <p style={{ color: isSelecionado ? 'rgba(255,255,255,0.5)' : t.textFaint, fontSize: 10, margin: 0 }}>+{ags.length - 3} mais</p>}
+                      {ags.length > 2 && <p style={{ color: isSelecionado ? 'rgba(255,255,255,0.5)' : t.textFaint, fontSize: 9, margin: 0 }}>+{ags.length - 2}</p>}
                     </div>
                   </div>
                 )
               })}
             </div>
-
-            {/* Detalhe do dia selecionado no mes */}
             {agHoje.length > 0 && (
-              <div style={{ borderTop: `0.5px solid ${t.rowBorder}`, padding: '16px 20px' }}>
-                <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', margin: '0 0 12px' }}>
+              <div style={{ borderTop: `0.5px solid ${t.rowBorder}`, padding: '14px 16px' }}>
+                <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', margin: '0 0 10px' }}>
                   {diaSelecionadoObj.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {agHoje.map(a => {
                     const cfg = STATUS_CONFIG[statusAgendamento(a.status)]
                     return (
-                      <div key={a.id} style={{ background: cfg.bg, borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.dot }} />
-                          <div>
-                            <p style={{ color: cfg.text, fontSize: 13, fontWeight: 500, margin: '0 0 2px' }}>{a.horario.slice(0, 5)} — {a.cliente_nome}</p>
+                      <div key={a.id} style={{ background: cfg.bg, borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                          <div style={{ width: 7, height: 7, borderRadius: '50%', background: cfg.dot, flexShrink: 0 }} />
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{ color: cfg.text, fontSize: 12, fontWeight: 500, margin: '0 0 1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.horario.slice(0, 5)} — {a.cliente_nome}</p>
                             <p style={{ color: cfg.text, fontSize: 11, margin: 0, opacity: 0.8 }}>{a.servico || 'Servico nao informado'}</p>
                           </div>
                         </div>
-                        <div style={{ display: 'flex', gap: 6 }}>
+                        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                           <select value={statusAgendamento(a.status)} onChange={e => alterarStatus(a.id, e.target.value)}
                             style={{ background: 'transparent', border: 'none', color: cfg.text, fontSize: 11, cursor: 'pointer', outline: 'none' }}>
                             <option value="pendente">Pendente</option>
@@ -561,31 +574,32 @@ export default function AgendaPage() {
 
         {/* Modal novo agendamento */}
         {novoAberto && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-            <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 20, padding: '32px', width: '100%', maxWidth: 480 }}>
-              <h2 style={{ color: t.text, fontSize: 18, fontWeight: 400, margin: '0 0 24px' }}>Novo agendamento</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 0 }}>
+            <div style={{ background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: '20px 20px 0 0', padding: '28px 20px', width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto' }}>
+              <div style={{ width: 40, height: 4, background: t.border, borderRadius: 2, margin: '0 auto 20px' }} />
+              <h2 style={{ color: t.text, fontSize: 18, fontWeight: 400, margin: '0 0 20px' }}>Novo agendamento</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div className="modal-grid2">
                   <div>
-                    <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Nome *</label>
+                    <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Nome *</label>
                     <input value={nomeCliente} onChange={e => setNomeCliente(e.target.value)} placeholder="Ex: Ana Paula" style={inputStyle} />
                   </div>
                   <div>
-                    <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>WhatsApp</label>
+                    <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>WhatsApp</label>
                     <input value={whatsCliente} onChange={e => setWhatsCliente(e.target.value)} placeholder="5519..." style={inputStyle} />
                   </div>
                 </div>
                 <div>
-                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Servico</label>
+                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Servico</label>
                   <input value={servico} onChange={e => setServico(e.target.value)} placeholder="Ex: Corte + Escova" style={inputStyle} />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="modal-grid2">
                   <div>
-                    <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Data *</label>
+                    <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Data *</label>
                     <input type="date" value={dataAg} onChange={e => setDataAg(e.target.value)} style={inputStyle} />
                   </div>
                   <div>
-                    <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Horario *</label>
+                    <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Horario *</label>
                     {horariosFormulario.length > 0 ? (
                       <select value={horarioAg} onChange={e => setHorarioAg(e.target.value)} style={{ ...inputStyle, appearance: 'none' as const }}>
                         <option value="">Selecione...</option>
@@ -600,18 +614,18 @@ export default function AgendaPage() {
                   </div>
                 </div>
                 <div>
-                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Observacao</label>
+                  <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Observacao</label>
                   <input value={obs} onChange={e => setObs(e.target.value)} placeholder="Opcional" style={inputStyle} />
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+              <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
                 {erro && <p style={{ color: '#be123c', fontSize: 12, margin: 0, flex: '1 0 100%' }}>{erro}</p>}
                 <button onClick={salvarAgendamento} disabled={processando === 'novo' || !nomeCliente || !dataAg || !horarioAg}
                   style={{ flex: 1, background: !nomeCliente || !dataAg || !horarioAg ? t.border : t.text, color: t.bg, border: 'none', borderRadius: 10, padding: 13, fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>
-                  {processando === 'novo' ? 'Salvando...' : 'Salvar agendamento'}
+                  {processando === 'novo' ? 'Salvando...' : 'Salvar'}
                 </button>
                 <button onClick={() => { setNovoAberto(false); setHorarioAg('') }}
-                  style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 10, padding: '13px 20px', fontSize: 12, cursor: 'pointer' }}>
+                  style={{ background: 'none', border: `0.5px solid ${t.border}`, color: t.textMuted, borderRadius: 10, padding: '13px 16px', fontSize: 12, cursor: 'pointer' }}>
                   Cancelar
                 </button>
               </div>
@@ -619,7 +633,7 @@ export default function AgendaPage() {
           </div>
         )}
       </div>
-    </div>
-  </Layout>
+    </Layout>
   )
+
 }
