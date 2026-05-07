@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import {
   BarChart3, CalendarDays, ClipboardList, CreditCard, Gift,
   LogOut, Menu, Moon, Package, Settings, Sparkles, Sun,
-  Tags, TrendingDown, UserRound, UsersRound, type LucideIcon,
+  Tags, TrendingDown, UserRound, UsersRound, PieChart, type LucideIcon,
 } from 'lucide-react'
 import { supabase } from '@/app/lib/supabase'
 import { useTema } from '@/app/lib/tema'
@@ -18,6 +18,7 @@ type NavGroup = { label: string; items: NavItem[] }
 const navGroups: NavGroup[] = [
   { label: 'Principal', items: [
     { label: 'Faturamento', path: '/dashboard', icon: BarChart3 },
+    { label: 'Relatorios', path: '/relatorios', icon: PieChart },
     { label: 'Agenda', path: '/agenda', icon: CalendarDays },
   ]},
   { label: 'Clientes', items: [
