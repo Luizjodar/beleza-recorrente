@@ -301,10 +301,12 @@ function AgendamentoPromo({ promo, salao, slug, horariosSalao }: { promo: Promoc
 
         {erro && <p style={{ color: '#be123c', fontSize: 12, margin: 0 }}>{erro}</p>}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {salao.pagamento_online && (
           <button onClick={pagarOnline} disabled={enviando || !nome || !whatsapp || !dataSelecionada || !horarioSelecionado}
             style={{ flex: 1, minWidth: 150, background: enviando || !nome || !whatsapp || !dataSelecionada || !horarioSelecionado ? '#f0f0f0' : '#111', color: enviando || !nome || !whatsapp || !dataSelecionada || !horarioSelecionado ? '#bbb' : 'white', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 12, letterSpacing: 2, cursor: 'pointer', fontWeight: 500 }}>
             {enviando ? 'ABRINDO...' : 'AGENDAR ONLINE'}
           </button>
+          )}
           <button onClick={pagarPessoalmente} disabled={!nome || !whatsapp || !dataSelecionada || !horarioSelecionado}
             style={{ flex: 1, minWidth: 150, background: !nome || !whatsapp || !dataSelecionada || !horarioSelecionado ? '#f0f0f0' : '#25D366', color: !nome || !whatsapp || !dataSelecionada || !horarioSelecionado ? '#bbb' : 'white', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 12, letterSpacing: 2, cursor: 'pointer', fontWeight: 500 }}>
             AGENDAR VIA WHATS
@@ -717,10 +719,12 @@ export default function PaginaPublica() {
                 </div>
               )}
 
+              {salao.pagamento_online && (
               <button onClick={pagarPlanoOnline} disabled={enviando || !nome || !whatsapp || !dataSelecionadaPlano || !horarioSelecionadoPlano}
                 style={{ width: '100%', background: enviando || !nome || !whatsapp || !dataSelecionadaPlano || !horarioSelecionadoPlano ? '#f0f0f0' : '#111', color: enviando || !nome || !whatsapp || !dataSelecionadaPlano || !horarioSelecionadoPlano ? '#bbb' : 'white', border: 'none', borderRadius: 8, padding: '14px 0', fontSize: 12, letterSpacing: 2, cursor: 'pointer', marginTop: 8, fontWeight: 500 }}>
                 {enviando ? 'AGUARDE...' : salao.taxa_reserva ? `RESERVAR — R$ ${salao.taxa_reserva.toFixed(0)}` : 'AGENDAR ONLINE'}
               </button>
+              )}
               <button onClick={assinarPessoalmente} disabled={!nome || !whatsapp || !dataSelecionadaPlano || !horarioSelecionadoPlano}
                 style={{ width: '100%', background: !nome || !whatsapp || !dataSelecionadaPlano || !horarioSelecionadoPlano ? '#f0f0f0' : '#25D366', color: !nome || !whatsapp || !dataSelecionadaPlano || !horarioSelecionadoPlano ? '#bbb' : 'white', border: 'none', borderRadius: 8, padding: '14px 0', fontSize: 12, letterSpacing: 2, cursor: 'pointer', fontWeight: 500 }}>
                 AGENDAR VIA WHATS

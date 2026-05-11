@@ -23,6 +23,7 @@ export default function ConfiguracoesPage() {
   const [whatsapp, setWhatsapp] = useState('')
   const [emailContato, setEmailContato] = useState('')
   const [taxaReserva, setTaxaReserva] = useState('')
+  const [pagamentoOnline, setPagamentoOnline] = useState(false)
   const [stripeConectado, setStripeConectado] = useState(false)
   const [stripeCarregando, setStripeCarregando] = useState(false)
   const [stripeChecking, setStripeChecking] = useState(true)
@@ -38,6 +39,7 @@ export default function ConfiguracoesPage() {
       setCargo(salao.cargo || ''); setDescricao(salao.descricao || '')
       setCidade(salao.cidade || ''); setWhatsapp(salao.whatsapp || ''); setEmailContato(salao.email_contato || '')
       setTaxaReserva(salao.taxa_reserva?.toString() || '')
+      setPagamentoOnline(salao.pagamento_online ?? false)
       setLoading(false)
     }
     init()
@@ -98,7 +100,7 @@ export default function ConfiguracoesPage() {
       if (existente) { setErro('Este link ja esta em uso. Escolha outro.'); return }
     }
     setSalvando(true); setErro('')
-    const { error } = await supabase.from('saloes').update({ nome, slug, cargo, descricao, cidade, whatsapp, email_contato: emailContato, taxa_reserva: taxaReserva ? parseFloat(taxaReserva) : null }).eq('id', salaoId)
+    const { error } = await supabase.from('saloes').update({ nome, slug, cargo, descricao, cidade, whatsapp, email_contato: emailContato, taxa_reserva: taxaReserva ? parseFloat(taxaReserva) : null, pagamento_online: pagamentoOnline }).eq('id', salaoId)
     if (error) { setErro('Erro ao salvar. Tente novamente.') }
     else { setSlugOriginal(slug); setSucesso(true); setTimeout(() => setSucesso(false), 3000) }
     setSalvando(false)
@@ -171,6 +173,20 @@ export default function ConfiguracoesPage() {
             <p style={{ color: t.textFaint, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', margin: 0 }}>Pagamento online</p>
           </div>
           <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+            {/* Toggle pagamento online */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: t.bg, borderRadius: 12, border: `0.5px solid ${t.border}` }}>
+              <div>
+                <p style={{ color: t.text, fontSize: 13, fontWeight: 500, margin: '0 0 3px' }}>Aceitar pagamento online</p>
+                <p style={{ color: t.textFaint, fontSize: 11, margin: 0 }}>
+                  {pagamentoOnline ? 'Botão "Agendar Online" visível na sua página' : 'Apenas agendamento via WhatsApp'}
+                </p>
+              </div>
+              <div onClick={() => setPagamentoOnline(!pagamentoOnline)}
+                style={{ width: 44, height: 24, borderRadius: 12, background: pagamentoOnline ? t.text : t.border, cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0, marginLeft: 16 }}>
+                <div style={{ position: 'absolute', top: 2, left: pagamentoOnline ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: pagamentoOnline ? t.bg : t.bgCard, transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
+              </div>
+            </div>
 
             {/* Stripe Connect */}
             <div style={{ border: `0.5px solid ${stripeConectado ? t.badgeAtivoText : t.border}`, borderRadius: 12, padding: '16px 20px', background: stripeConectado ? t.badgeAtivo : t.bg }}>
