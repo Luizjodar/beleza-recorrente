@@ -100,21 +100,37 @@ function LineChart({ data, campos, cores, labels, height = 150 }: {
   height?: number
 }) {
   const { t } = useTemaLocal()
+
+  // Escala global com padding para não sobrepor linhas com valores iguais
   const allValues = campos.flatMap(c => data.map(d => Number(d[c])))
-  const max = Math.max(...allValues, 1)
+  const maxVal = Math.max(...allValues, 1)
+  const minVal = Math.min(...allValues.filter(v => v > 0), 0)
+  const range = maxVal - minVal || 1
   const step = 100 / Math.max(data.length - 1, 1)
 
-  function pontos(campo: keyof MesData) {
+  // Offset vertical por campo para separar linhas sobrepostas
+  const offsets = campos.map((_, ci) => ci * 3)
+
+  function pontos(campo: keyof MesData, offsetY: number) {
     return data.map((d, i) => {
       const x = i * step
-      const y = 5 + (1 - Number(d[campo]) / max) * 85
+      const y = 8 + (1 - (Number(d[campo]) - minVal) / range) * 78 + offsetY
       return `${x.toFixed(1)},${y.toFixed(1)}`
     }).join(' ')
   }
 
+  function areaPath(campo: keyof MesData, offsetY: number) {
+    const pts = data.map((d, i) => {
+      const x = (i * step).toFixed(1)
+      const y = (8 + (1 - (Number(d[campo]) - minVal) / range) * 78 + offsetY).toFixed(1)
+      return { x, y }
+    })
+    return `M ${pts[0].x} 100 ${pts.map(p => `L ${p.x} ${p.y}`).join(' ')} L ${pts[pts.length-1].x} 100 Z`
+  }
+
   return (
     <div>
-      <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+      <div style={{ display: 'flex', gap: 20, marginBottom: 12, flexWrap: 'wrap' }}>
         {labels.map((l, i) => (
           <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ width: 20, height: 2, background: cores[i], borderRadius: 1 }} />
@@ -126,23 +142,21 @@ function LineChart({ data, campos, cores, labels, height = 150 }: {
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ width: '100%', height, display: 'block' }}>
           <defs>
             {campos.map((campo, ci) => (
-              <linearGradient key={String(campo)} id={`grad${ci}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={cores[ci]} stopOpacity="0.15" />
+              <linearGradient key={String(campo)} id={`relgrad${ci}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={cores[ci]} stopOpacity="0.12" />
                 <stop offset="100%" stopColor={cores[ci]} stopOpacity="0" />
               </linearGradient>
             ))}
           </defs>
           {campos.map((campo, ci) => {
-            const pts = data.map((d, i) => {
-              const x = i * step
-              const y = 5 + (1 - Number(d[campo]) / max) * 85
-              return { x: x.toFixed(1), y: y.toFixed(1) }
-            })
-            const areaPath = `M ${pts[0].x} 100 ${pts.map(p => `L ${p.x} ${p.y}`).join(' ')} L ${pts[pts.length-1].x} 100 Z`
+            const pts = data.map((d, i) => ({
+              x: (i * step).toFixed(1),
+              y: (8 + (1 - (Number(d[campo]) - minVal) / range) * 78 + offsets[ci]).toFixed(1)
+            }))
             return (
               <g key={String(campo)}>
-                <path d={areaPath} fill={`url(#grad${ci})`} />
-                <polyline points={pontos(campo)} fill="none" stroke={cores[ci]} strokeWidth="1.5" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+                <path d={areaPath(campo, offsets[ci])} fill={`url(#relgrad${ci})`} />
+                <polyline points={pontos(campo, offsets[ci])} fill="none" stroke={cores[ci]} strokeWidth="1.5" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
                 {pts.map((p, i) => (
                   <circle key={i} cx={p.x} cy={p.y} r="1.8" fill={cores[ci]} vectorEffect="non-scaling-stroke" />
                 ))}
