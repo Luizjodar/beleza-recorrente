@@ -68,14 +68,18 @@ export default function DespesasPage() {
 
   async function salvar() {
     if (!descricao || !valor || !data || !salaoId) return
+    const valorNum = parseFloat(valor.replace(',', '.'))
+    if (isNaN(valorNum) || valorNum <= 0) return
     setSalvando(true)
-    await supabase.from('despesas').insert({
+    const { error } = await supabase.from('despesas').insert({
       salao_id: salaoId, descricao, categoria, tipo,
-      valor: parseFloat(valor), data, recorrente,
+      valor: valorNum, data, recorrente,
     })
-    await carregar(salaoId)
-    setDescricao(''); setValor(''); setCategoria('outros'); setTipo('fixa'); setRecorrente(false)
-    setCriando(false)
+    if (!error) {
+      await carregar(salaoId)
+      setDescricao(''); setValor(''); setCategoria('outros'); setTipo('fixa'); setRecorrente(false)
+      setCriando(false)
+    }
     setSalvando(false)
   }
 
@@ -154,7 +158,7 @@ export default function DespesasPage() {
                 </div>
                 <div>
                   <label style={{ color: t.textFaint, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Valor *</label>
-                  <input value={valor} onChange={e => setValor(e.target.value)} placeholder="R$ 0,00" type="number" style={inputStyle} />
+                  <input value={valor} onChange={e => setValor(e.target.value.replace(/[^0-9.,]/g, ''))} placeholder="0,00" inputMode="decimal" style={inputStyle} />
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
