@@ -11,7 +11,6 @@ import {
 import { supabase } from '@/app/lib/supabase'
 import { useTema } from '@/app/lib/tema'
 import Tour from './Tour'
-import ChatRobo from './ChatRobo'
 
 type ThemeTokens = Record<string, string>
 type NavItem = { label: string; path: string; icon: LucideIcon }
@@ -196,7 +195,6 @@ export default function Layout({ children }: { children: ReactNode }) {
         })}
       </div>
       <Tour />
-      <ChatRobo />
     </>
   )
 }
