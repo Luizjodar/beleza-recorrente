@@ -60,6 +60,12 @@ export async function POST(req: Request) {
   })
 
   const data = await res.json()
+
+  if (!res.ok) {
+    console.error('Anthropic API error:', JSON.stringify(data))
+    return NextResponse.json({ error: data.error?.message || 'Erro da API', resposta: `Erro: ${data.error?.message || 'API indisponível'}` }, { status: 500 })
+  }
+
   const texto = data.content?.[0]?.text || 'Desculpe, não consegui responder.'
   return NextResponse.json({ resposta: texto })
 }
