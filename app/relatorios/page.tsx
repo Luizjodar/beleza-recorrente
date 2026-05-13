@@ -91,7 +91,7 @@ function BarChart({ data, campo, cor, label, height = 140 }: {
   )
 }
 
-// Gráfico de barras agrupadas — Receita, Despesas, Lucro
+// Gráfico de linha SVG — tendência ao longo do tempo
 function LineChart({ data, campos, cores, labels, height = 160 }: {
   data: MesData[]
   campos: (keyof MesData)[]
@@ -100,52 +100,82 @@ function LineChart({ data, campos, cores, labels, height = 160 }: {
   height?: number
 }) {
   const { t } = useTemaLocal()
-  const allValues = campos.flatMap(c => data.map(d => Number(d[c])))
-  const max = Math.max(...allValues, 1)
-  const [hover, setHover] = useState<string | null>(null)
+  const step = 100 / Math.max(data.length - 1, 1)
+
+  // Cada campo tem sua própria escala para evitar sobreposição
+  const escalas = campos.map(campo => {
+    const vals = data.map(d => Number(d[campo]))
+    return Math.max(...vals, 1)
+  })
+
+  function pontos(campo: keyof MesData, escala: number, offsetY: number) {
+    return data.map((d, i) => {
+      const x = i * step
+      const y = 10 + (1 - Number(d[campo]) / escala) * 75 + offsetY
+      return `${x.toFixed(1)},${Math.max(10, Math.min(90, y)).toFixed(1)}`
+    }).join(' ')
+  }
+
+  function areaPath(campo: keyof MesData, escala: number, offsetY: number) {
+    const pts = data.map((d, i) => ({
+      x: (i * step).toFixed(1),
+      y: Math.max(10, Math.min(90, 10 + (1 - Number(d[campo]) / escala) * 75 + offsetY)).toFixed(1),
+    }))
+    return `M ${pts[0].x} 100 ${pts.map(p => `L ${p.x} ${p.y}`).join(' ')} L ${pts[pts.length - 1].x} 100 Z`
+  }
+
+  // Offsets para separar visualmente linhas próximas
+  const offsets = [0, 4, -4]
 
   return (
     <div>
       <div style={{ display: 'flex', gap: 20, marginBottom: 16, flexWrap: 'wrap' }}>
         {labels.map((l, i) => (
           <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 10, height: 10, borderRadius: 3, background: cores[i] }} />
+            <div style={{ width: 20, height: 2.5, background: cores[i], borderRadius: 2 }} />
             <span style={{ color: t.textFaint, fontSize: 11 }}>{l}</span>
           </div>
         ))}
       </div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height }}>
-        {data.map((d, mi) => (
-          <div key={d.mes} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, height: '100%', justifyContent: 'flex-end' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, width: '100%', height: '90%' }}>
-              {campos.map((campo, ci) => {
-                const val = Number(d[campo])
-                const pct = max > 0 ? (val / max) * 100 : 0
-                const key = `${mi}-${ci}`
-                return (
-                  <div key={ci} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', position: 'relative' }}
-                    onMouseEnter={() => setHover(key)} onMouseLeave={() => setHover(null)}>
-                    {hover === key && val > 0 && (
-                      <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', background: t.text, color: t.bg, fontSize: 10, padding: '3px 7px', borderRadius: 6, whiteSpace: 'nowrap', marginBottom: 4, zIndex: 10 }}>
-                        {val >= 1000 ? `R$ ${(val/1000).toFixed(1)}k` : `R$ ${val}`}
-                      </div>
-                    )}
-                    <div style={{
-                      width: '100%',
-                      height: `${Math.max(pct, val > 0 ? 2 : 0)}%`,
-                      background: cores[ci],
-                      borderRadius: '3px 3px 0 0',
-                      opacity: mi === data.length - 1 ? 1 : 0.75,
-                      transition: 'height 0.3s',
-                      minHeight: val > 0 ? 2 : 0,
-                    }} />
-                  </div>
-                )
-              })}
-            </div>
-            <p style={{ color: mi === data.length - 1 ? t.text : t.textFaint, fontSize: 10, margin: 0, fontWeight: mi === data.length - 1 ? 600 : 400 }}>{d.label}</p>
-          </div>
-        ))}
+      <div style={{ position: 'relative' }}>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ width: '100%', height, display: 'block' }}>
+          <defs>
+            {campos.map((_, ci) => (
+              <linearGradient key={ci} id={`lg${ci}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={cores[ci]} stopOpacity="0.15" />
+                <stop offset="100%" stopColor={cores[ci]} stopOpacity="0" />
+              </linearGradient>
+            ))}
+          </defs>
+          {/* Linhas de grade */}
+          {[25, 50, 75].map(y => (
+            <line key={y} x1="0" y1={y} x2="100" y2={y} stroke={t.border} strokeWidth="0.3" vectorEffect="non-scaling-stroke" strokeDasharray="2,2" />
+          ))}
+          {campos.map((campo, ci) => {
+            const pts = data.map((d, i) => ({
+              x: (i * step).toFixed(1),
+              y: Math.max(10, Math.min(90, 10 + (1 - Number(d[campo]) / escalas[ci]) * 75 + offsets[ci])).toFixed(1),
+            }))
+            return (
+              <g key={String(campo)}>
+                <path d={areaPath(campo, escalas[ci], offsets[ci])} fill={`url(#lg${ci})`} />
+                <polyline
+                  points={pontos(campo, escalas[ci], offsets[ci])}
+                  fill="none" stroke={cores[ci]} strokeWidth="1.8"
+                  vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round"
+                />
+                {pts.map((p, i) => (
+                  <circle key={i} cx={p.x} cy={p.y} r="2" fill={cores[ci]} stroke={t.bgCard} strokeWidth="0.8" vectorEffect="non-scaling-stroke" />
+                ))}
+              </g>
+            )
+          })}
+        </svg>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+          {data.map((d, i) => (
+            <p key={d.mes} style={{ color: i === data.length - 1 ? t.text : t.textFaint, fontSize: 10, margin: 0, fontWeight: i === data.length - 1 ? 600 : 400 }}>{d.label}</p>
+          ))}
+        </div>
       </div>
     </div>
   )
