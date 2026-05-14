@@ -71,16 +71,20 @@ export default function PagamentosPage() {
     if (!salaoId) return
     setProcessando(assinante.id)
     setErro('')
-    await supabase.from('pagamentos').insert({
+    const { error } = await supabase.from('pagamentos').insert({
       salao_id: salaoId, assinante_id: assinante.id,
       valor: assinante.pacotes?.preco_mensal || 0,
       status: 'pago', mes_referencia: mesRef, pago_em: new Date().toISOString(),
     })
-    const proxima = new Date()
-    proxima.setMonth(proxima.getMonth() + 1)
-    proxima.setDate(1)
-    await supabase.from('assinantes').update({ status: 'ativo', proxima_cobranca: proxima.toISOString().split('T')[0] }).eq('id', assinante.id)
-    await carregar(salaoId)
+    if (!error) {
+      const proxima = new Date()
+      proxima.setMonth(proxima.getMonth() + 1)
+      proxima.setDate(1)
+      await supabase.from('assinantes').update({ status: 'ativo', proxima_cobranca: proxima.toISOString().split('T')[0] }).eq('id', assinante.id)
+      await carregar(salaoId)
+    } else {
+      setErro('Erro ao confirmar pagamento. Tente novamente.')
+    }
     setProcessando(null)
   }
 

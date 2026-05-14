@@ -115,24 +115,28 @@ export default function PacotesPage() {
     }
 
     if (editando) {
-      await supabase.from('pacotes').update({ nome, descricao, preco_mensal: parseFloat(preco), imagem_url }).eq('id', editando.id)
-      await supabase.from('pacote_itens').delete().eq('pacote_id', editando.id)
-      await supabase.from('pacote_itens').insert(
-        itensFiltrados.map((item, i) => ({ pacote_id: editando.id, servico_nome: item.servico_nome, quantidade: item.quantidade, ordem: i }))
-      )
+      const { error } = await supabase.from('pacotes').update({ nome, descricao, preco_mensal: parseFloat(preco), imagem_url }).eq('id', editando.id)
+      if (!error) {
+        await supabase.from('pacote_itens').delete().eq('pacote_id', editando.id)
+        await supabase.from('pacote_itens').insert(
+          itensFiltrados.map((item, i) => ({ pacote_id: editando.id, servico_nome: item.servico_nome, quantidade: item.quantidade, ordem: i }))
+        )
+        await carregarPacotes(salaoId)
+        cancelar()
+      }
     } else {
-      const { data: pacote } = await supabase.from('pacotes').insert({
+      const { data: pacote, error } = await supabase.from('pacotes').insert({
         salao_id: salaoId, nome, descricao, preco_mensal: parseFloat(preco), imagem_url,
       }).select().single()
-      if (pacote) {
+      if (!error && pacote) {
         await supabase.from('pacote_itens').insert(
           itensFiltrados.map((item, i) => ({ pacote_id: pacote.id, servico_nome: item.servico_nome, quantidade: item.quantidade, ordem: i }))
         )
+        await carregarPacotes(salaoId)
+        cancelar()
       }
     }
-    await carregarPacotes(salaoId)
     setUploadando(false)
-    cancelar()
   }
 
   async function excluirPacote(id: string) {

@@ -61,16 +61,16 @@ export default function AssinantesPage() {
 
   async function salvarAssinante() {
     if (!nome || !whatsapp || !pacoteId || !salaoId) return
-    const { data } = await supabase.from('assinantes').insert({
+    const { data, error } = await supabase.from('assinantes').insert({
       salao_id: salaoId, pacote_id: pacoteId, nome, whatsapp, email,
       data_inicio: new Date().toISOString().split('T')[0],
     }).select('*, pacotes(nome, preco_mensal)').single()
-    if (data) {
+    if (!error && data) {
       await supabase.rpc('gerar_saldo_mensal', { p_assinante_id: data.id, p_mes: new Date().toISOString().split('T')[0] })
       setAssinantes([data as Assinante, ...assinantes])
+      setNome(''); setWhatsapp(''); setEmail(''); setPacoteId('')
+      setCriando(false)
     }
-    setNome(''); setWhatsapp(''); setEmail(''); setPacoteId('')
-    setCriando(false)
   }
 
   async function abrirSaldo(assinanteId: string) {
