@@ -60,17 +60,19 @@ export default function ProdutosPage() {
   async function salvar() {
     if (!nome || !salaoId) return
     setSalvando(true)
-    await supabase.from('produtos').insert({
+    const { error } = await supabase.from('produtos').insert({
       salao_id: salaoId, nome, categoria,
-      preco_custo: precoCusto ? parseFloat(precoCusto) : null,
-      preco_venda: precoVenda ? parseFloat(precoVenda) : null,
+      preco_custo: precoCusto ? parseFloat(precoCusto.replace(',', '.')) : null,
+      preco_venda: precoVenda ? parseFloat(precoVenda.replace(',', '.')) : null,
       estoque_atual: parseInt(estoqueAtual) || 0,
       estoque_minimo: parseInt(estoqueMinimo) || 5,
-      unidade,
+      unidade, ativo: true,
     })
-    await carregar(salaoId)
-    setNome(''); setPrecoCusto(''); setPrecoVenda(''); setEstoqueAtual(''); setEstoqueMinimo('5'); setUnidade('un')
-    setCriando(false)
+    if (!error) {
+      await carregar(salaoId)
+      setNome(''); setPrecoCusto(''); setPrecoVenda(''); setEstoqueAtual(''); setEstoqueMinimo('5'); setUnidade('un')
+      setCriando(false)
+    }
     setSalvando(false)
   }
 

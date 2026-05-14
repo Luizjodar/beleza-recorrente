@@ -68,13 +68,13 @@ export default function FuncionariosPage() {
     if (!nome || !salaoId) return
     setSalvando(true)
     const payload = { salao_id: salaoId, nome, cargo, telefone, email, comissao_pct: parseFloat(comissao) || 0 }
-    if (editando) {
-      await supabase.from('funcionarios').update(payload).eq('id', editando.id)
-    } else {
-      await supabase.from('funcionarios').insert(payload)
+    const { error } = editando
+      ? await supabase.from('funcionarios').update(payload).eq('id', editando.id)
+      : await supabase.from('funcionarios').insert(payload)
+    if (!error) {
+      await carregar(salaoId)
+      cancelar()
     }
-    await carregar(salaoId)
-    cancelar()
     setSalvando(false)
   }
 

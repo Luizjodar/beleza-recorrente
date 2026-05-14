@@ -97,11 +97,14 @@ export default function PromocoesPage() {
     }
 
     const payload = { salao_id: salaoId, titulo, descricao, preco_original: precoOriginal ? parseFloat(precoOriginal) : null, preco_promo: parseFloat(precoPromo), data_fim: dataFim, imagem_url }
-    if (editando) await supabase.from('promocoes').update(payload).eq('id', editando.id)
-    else await supabase.from('promocoes').insert(payload)
-    await carregar(salaoId)
+    const { error } = editando
+      ? await supabase.from('promocoes').update(payload).eq('id', editando.id)
+      : await supabase.from('promocoes').insert(payload)
+    if (!error) {
+      await carregar(salaoId)
+      cancelar()
+    }
     setUploadando(false)
-    cancelar()
   }
 
   async function excluir(id: string) {
