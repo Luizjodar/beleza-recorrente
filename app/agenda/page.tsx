@@ -85,6 +85,10 @@ function gerarHorarios(inicio: string, fim: string, intervalo: number): string[]
   return result
 }
 
+function formatarDataAg(data: string): string {
+  return new Date(data + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
+}
+
 export default function AgendaPage() {
   const router = useRouter()
   const { t } = useTema()
@@ -630,16 +634,23 @@ export default function AgendaPage() {
               </div>
             </div>
             {/* Ações */}
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {agSelecionado.cliente_whatsapp && (
-                <a href={`https://wa.me/${agSelecionado.cliente_whatsapp}?text=Oi ${agSelecionado.cliente_nome.split(' ')[0]}! Confirmando seu horario de ${agSelecionado.horario.slice(0,5)}.`}
-                  target="_blank" rel="noreferrer"
-                  style={{ flex: 1, background: '#25D366', color: 'white', border: 'none', borderRadius: 10, padding: '10px 0', fontSize: 12, cursor: 'pointer', fontWeight: 600, textAlign: 'center', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                  💬 WhatsApp
-                </a>
+                <>
+                  <a href={`https://wa.me/${agSelecionado.cliente_whatsapp.replace(/\D/g,'').startsWith('55') ? agSelecionado.cliente_whatsapp.replace(/\D/g,'') : '55'+agSelecionado.cliente_whatsapp.replace(/\D/g,'')}?text=${encodeURIComponent(`Olá, ${agSelecionado.cliente_nome.split(' ')[0]}! 🎉\n\nSeu agendamento foi confirmado no *${agSelecionado.cliente_nome}*!\n\n📅 *Data:* ${formatarDataAg(agSelecionado.data)}\n🕐 *Horário:* ${agSelecionado.horario.slice(0,5)}\n✂️ *Serviço:* ${agSelecionado.servico || 'Serviço'}\n\nTe esperamos! 😊`)}`}
+                    target="_blank" rel="noreferrer"
+                    style={{ flex: 1, background: '#25D366', color: 'white', border: 'none', borderRadius: 10, padding: '10px 0', fontSize: 12, cursor: 'pointer', fontWeight: 600, textAlign: 'center', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                    ✅ Confirmação
+                  </a>
+                  <a href={`https://wa.me/${agSelecionado.cliente_whatsapp.replace(/\D/g,'').startsWith('55') ? agSelecionado.cliente_whatsapp.replace(/\D/g,'') : '55'+agSelecionado.cliente_whatsapp.replace(/\D/g,'')}?text=${encodeURIComponent(`Oi, ${agSelecionado.cliente_nome.split(' ')[0]}! 👋\n\nPassando para lembrar do seu horário *amanhã*!\n\n📅 *${formatarDataAg(agSelecionado.data)}* às *${agSelecionado.horario.slice(0,5)}*\n✂️ ${agSelecionado.servico || 'Serviço'}\n\nConfirma sua presença? ✅`)}`}
+                    target="_blank" rel="noreferrer"
+                    style={{ flex: 1, background: '#128C7E', color: 'white', border: 'none', borderRadius: 10, padding: '10px 0', fontSize: 12, cursor: 'pointer', fontWeight: 600, textAlign: 'center', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                    ⏰ Lembrete
+                  </a>
+                </>
               )}
               <button onClick={() => excluir(agSelecionado.id)}
-                style={{ background: '#fff1f2', color: '#be123c', border: '1px solid #fecdd3', borderRadius: 10, padding: '10px 16px', fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>
+                style={{ background: '#fff1f2', color: '#be123c', border: '1px solid #fecdd3', borderRadius: 10, padding: '10px 14px', fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>
                 Excluir
               </button>
             </div>
