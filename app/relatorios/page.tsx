@@ -5,7 +5,6 @@ import { supabase } from '@/app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useTema } from '@/app/lib/tema'
 import Layout from '../components/Layout'
-
 const MESES_CURTOS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
 type Assinante = {
@@ -310,6 +309,161 @@ export default function RelatoriosPage() {
     { label: 'Cancelados', valor: statusAgs['cancelado'] || 0, cor: '#ef4444' },
   ].filter(f => f.valor > 0)
 
+  const [exportando, setExportando] = useState<'pdf'|'excel'|null>(null)
+
+  async function exportarExcel() {
+    setExportando('excel')
+    const XLSX = await import('xlsx')
+    const wb = XLSX.utils.book_new()
+
+    // Aba 1 — Resumo financeiro
+    const resumo = [
+      ['Relatório Financeiro', `Últimos ${periodo} meses`],
+      [],
+      ['Indicador', 'Valor'],
+      ['Receita Total', `R$ ${totalReceita.toFixed(2)}`],
+      ['Despesas Total', `R$ ${totalDespesas.toFixed(2)}`],
+      ['Lucro Líquido', `R$ ${totalLucro.toFixed(2)}`],
+      ['MRR Atual', `R$ ${mrr.toFixed(2)}`],
+      ['Assinantes Ativos', ativos],
+      ['Inadimplentes', inadimplentes],
+      ['Churn Rate', `${taxaChurn}%`],
+      ['Novos no Período', totalNovos],
+    ]
+    const ws1 = XLSX.utils.aoa_to_sheet(resumo)
+    ws1['!cols'] = [{ wch: 25 }, { wch: 20 }]
+    XLSX.utils.book_append_sheet(wb, ws1, 'Resumo')
+
+    // Aba 2 — Histórico mensal
+    const historico = [
+      ['Mês', 'Receita (R$)', 'Despesas (R$)', 'Lucro (R$)', 'Novos Assinantes', 'Agendamentos'],
+      ...meses.map(m => [m.label, m.receita.toFixed(2), m.despesas.toFixed(2), m.lucro.toFixed(2), m.novos, m.agendamentos]),
+    ]
+    const ws2 = XLSX.utils.aoa_to_sheet(historico)
+    ws2['!cols'] = [{ wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 18 }, { wch: 14 }]
+    XLSX.utils.book_append_sheet(wb, ws2, 'Histórico Mensal')
+
+    // Aba 3 — Assinantes
+    const listaAs = [
+      ['Nome', 'Status', 'Plano', 'Valor/Mês (R$)'],
+      ...assinantes.map(a => [a.status, a.pacotes?.nome || '—', (a.pacotes?.preco_mensal || 0).toFixed(2)]),
+    ]
+    const ws3 = XLSX.utils.aoa_to_sheet(listaAs)
+    ws3['!cols'] = [{ wch: 30 }, { wch: 14 }, { wch: 20 }, { wch: 14 }]
+    XLSX.utils.book_append_sheet(wb, ws3, 'Assinantes')
+
+    // Aba 4 — Despesas por categoria
+    const despCat = [
+      ['Categoria', 'Total (R$)', '% do Total'],
+      ...fatiasCateg.map(f => [f.label, f.valor.toFixed(2), `${((f.valor / totalDespesas) * 100).toFixed(1)}%`]),
+    ]
+    const ws4 = XLSX.utils.aoa_to_sheet(despCat)
+    ws4['!cols'] = [{ wch: 18 }, { wch: 14 }, { wch: 14 }]
+    XLSX.utils.book_append_sheet(wb, ws4, 'Despesas')
+
+    XLSX.writeFile(wb, `relatorio-beleza-${new Date().toISOString().slice(0,10)}.xlsx`)
+    setExportando(null)
+  }
+
+  async function exportarPDF() {
+    setExportando('pdf')
+    const { default: jsPDF } = await import('jspdf')
+    const { default: autoTable } = await import('jspdf-autotable')
+    const doc = new jsPDF()
+
+    const dataHoje = new Date().toLocaleDateString('pt-BR')
+    const corPrincipal: [number, number, number] = [99, 102, 241]
+
+    // Header
+    doc.setFillColor(...corPrincipal)
+    doc.rect(0, 0, 210, 28, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(18)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Beleza Recorrente', 14, 12)
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Relatório Financeiro — Últimos ${periodo} meses`, 14, 20)
+    doc.text(dataHoje, 196, 20, { align: 'right' })
+
+    // KPIs
+    doc.setTextColor(0, 0, 0)
+    doc.setFontSize(13)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Indicadores Principais', 14, 38)
+
+    autoTable(doc, {
+      startY: 42,
+      head: [['Indicador', 'Valor']],
+      body: [
+        ['Receita Total', `R$ ${totalReceita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+        ['Despesas Total', `R$ ${totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+        ['Lucro Líquido', `R$ ${totalLucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+        ['MRR Atual', `R$ ${mrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+        ['Assinantes Ativos', String(ativos)],
+        ['Inadimplentes', String(inadimplentes)],
+        ['Churn Rate', `${taxaChurn}%`],
+        ['Novos no Período', String(totalNovos)],
+      ],
+      headStyles: { fillColor: corPrincipal, textColor: [255,255,255], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [248, 248, 255] },
+      columnStyles: { 0: { cellWidth: 80 }, 1: { cellWidth: 60, halign: 'right' } },
+    })
+
+    // Histórico mensal
+    const y1 = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10
+    doc.setFontSize(13)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Histórico Mensal', 14, y1)
+
+    autoTable(doc, {
+      startY: y1 + 4,
+      head: [['Mês', 'Receita', 'Despesas', 'Lucro', 'Novos', 'Agend.']],
+      body: meses.map(m => [
+        m.label,
+        `R$ ${m.receita.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`,
+        `R$ ${m.despesas.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`,
+        `R$ ${m.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`,
+        String(m.novos),
+        String(m.agendamentos),
+      ]),
+      headStyles: { fillColor: corPrincipal, textColor: [255,255,255], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [248, 248, 255] },
+    })
+
+    // Despesas por categoria
+    if (fatiasCateg.length > 0) {
+      const y2 = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10
+      doc.setFontSize(13)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Despesas por Categoria', 14, y2)
+
+      autoTable(doc, {
+        startY: y2 + 4,
+        head: [['Categoria', 'Total', '% do Total']],
+        body: fatiasCateg.map(f => [
+          f.label.charAt(0).toUpperCase() + f.label.slice(1),
+          `R$ ${f.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+          `${totalDespesas > 0 ? ((f.valor / totalDespesas) * 100).toFixed(1) : 0}%`,
+        ]),
+        headStyles: { fillColor: corPrincipal, textColor: [255,255,255], fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 248, 255] },
+      })
+    }
+
+    // Footer
+    const pageCount = doc.getNumberOfPages()
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      doc.setFontSize(8)
+      doc.setTextColor(150, 150, 150)
+      doc.text(`Beleza Recorrente — Gerado em ${dataHoje} — Página ${i} de ${pageCount}`, 105, 290, { align: 'center' })
+    }
+
+    doc.save(`relatorio-beleza-${new Date().toISOString().slice(0,10)}.pdf`)
+    setExportando(null)
+  }
+
   const card = { background: t.bgCard, border: `0.5px solid ${t.borderCard}`, borderRadius: 18, padding: '24px' }
 
   if (loading) return (
@@ -344,13 +498,25 @@ export default function RelatoriosPage() {
             <p style={{ color: t.textMuted, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', margin: '0 0 6px' }}>Analise</p>
             <h1 style={{ color: t.text, fontSize: 30, fontWeight: 300, margin: 0, letterSpacing: -0.5, fontFamily: 'Georgia, serif' }}>Relatorios</h1>
           </div>
-          <div style={{ display: 'flex', gap: 4, background: t.bgCard, border: `0.5px solid ${t.border}`, borderRadius: 10, padding: 3 }}>
-            {[3, 6, 12].map(p => (
-              <button key={p} onClick={() => setPeriodo(p)}
-                style={{ background: periodo === p ? t.text : 'none', color: periodo === p ? t.bg : t.textMuted, border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, cursor: 'pointer', fontWeight: periodo === p ? 500 : 400 }}>
-                {p}m
-              </button>
-            ))}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            {/* Exportação */}
+            <button onClick={exportarExcel} disabled={exportando !== null}
+              style={{ background: '#16a34a', color: 'white', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12, cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, opacity: exportando === 'excel' ? 0.7 : 1 }}>
+              {exportando === 'excel' ? '⏳ Gerando...' : '📊 Excel'}
+            </button>
+            <button onClick={exportarPDF} disabled={exportando !== null}
+              style={{ background: '#dc2626', color: 'white', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12, cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, opacity: exportando === 'pdf' ? 0.7 : 1 }}>
+              {exportando === 'pdf' ? '⏳ Gerando...' : '📄 PDF'}
+            </button>
+            {/* Período */}
+            <div style={{ display: 'flex', gap: 4, background: t.bgCard, border: `0.5px solid ${t.border}`, borderRadius: 10, padding: 3 }}>
+              {[3, 6, 12].map(p => (
+                <button key={p} onClick={() => setPeriodo(p)}
+                  style={{ background: periodo === p ? t.text : 'none', color: periodo === p ? t.bg : t.textMuted, border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, cursor: 'pointer', fontWeight: periodo === p ? 500 : 400 }}>
+                  {p}m
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
