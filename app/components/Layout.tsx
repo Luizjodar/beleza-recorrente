@@ -11,6 +11,7 @@ import {
 import { supabase } from '@/app/lib/supabase'
 import { useTema } from '@/app/lib/tema'
 import Tour from './Tour'
+import Notificacoes from './Notificacoes'
 
 type ThemeTokens = Record<string, string>
 type NavItem = { label: string; path: string; icon: LucideIcon }
@@ -93,14 +94,16 @@ export default function Layout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const { tema, toggleTema, t } = useTema()
   const [nomeSalao, setNomeSalao] = useState('Meu Salao')
+  const [salaoId, setSalaoId] = useState<string | null>(null)
   const [menuAberto, setMenuAberto] = useState(false)
 
   useEffect(() => {
     async function carregarNome() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data: salao } = await supabase.from('saloes').select('nome').eq('user_id', user.id).single()
+      const { data: salao } = await supabase.from('saloes').select('id, nome').eq('user_id', user.id).single()
       if (salao?.nome) setNomeSalao(salao.nome)
+      if (salao?.id) setSalaoId(salao.id)
     }
     carregarNome()
   }, [])
@@ -157,6 +160,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Notificacoes salaoId={salaoId} />
           <button onClick={toggleTema}
             style={{ background: t.bg, border: `0.5px solid ${t.border}`, borderRadius: 20, padding: '5px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
             {tema === 'claro' ? <Moon size={14} strokeWidth={1.8} color={t.textMuted} /> : <Sun size={14} strokeWidth={1.8} color={t.textMuted} />}
