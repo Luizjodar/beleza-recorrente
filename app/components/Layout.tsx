@@ -32,6 +32,7 @@ const navGroups: NavGroup[] = [
   ]},
   { label: 'Financeiro', items: [
     { label: 'Pagamentos', path: '/pagamentos', icon: CreditCard },
+    { label: 'Comissoes', path: '/comissoes', icon: Sparkles },
     { label: 'Despesas', path: '/despesas', icon: TrendingDown },
   ]},
   { label: 'Gestao', items: [
