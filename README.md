@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Beleza Recorrente
 
-## Getting Started
+Sistema SaaS para gestão de salões de beleza, com agenda, clientes, assinantes, pacotes, pagamentos, funcionários, produtos, promoções e dashboard.
 
-First, run the development server:
+## Tecnologias usadas
+
+* Next.js
+* React
+* TypeScript
+* Supabase
+* Stripe
+* Resend
+* Tailwind CSS
+* Vercel
+
+## Como rodar o projeto
+
+### 1. Clonar o repositório
+
+```bash
+git clone https://github.com/Luizjodar/beleza-recorrente.git
+cd beleza-recorrente
+```
+
+### 2. Instalar as dependências
+
+```bash
+npm install
+```
+
+### 3. Criar o arquivo `.env.local`
+
+Na raiz do projeto, crie um arquivo chamado:
+
+```bash
+.env.local
+```
+
+Use o arquivo `env.example` como modelo.
+
+Exemplo:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+CRON_SECRET=
+RESEND_API_KEY=
+```
+
+Atenção: nunca coloque chaves reais no GitHub.
+
+### 4. Rodar o projeto
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Depois acesse:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Observações
 
-## Learn More
+Para o sistema funcionar corretamente, é necessário configurar as variáveis de ambiente do Supabase, Stripe e Resend.
 
-To learn more about Next.js, take a look at the following resources:
+O arquivo `.env.local` deve ficar apenas no computador de quem está rodando o projeto e não deve ser enviado para o GitHub.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+O projeto pode ser publicado na Vercel.
 
-## Deploy on Vercel
+As variáveis de ambiente também precisam ser cadastradas em:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Vercel → Project → Settings → Environment Variables
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
